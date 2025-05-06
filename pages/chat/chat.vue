@@ -410,10 +410,10 @@
 					name: 'audio_file',
 					formData: {
 						sceneId: this.sceneId,
-						fileName: fileName // 传递文件名到后端
+						fileName: fileName  // 传递文件名到后端
 					},
 					success: (uploadRes) => {
-						// 解析返回结果
+						// 解析返回结果 
 						try {
 							const data = JSON.parse(uploadRes.data);
 							console.log('语音转文字结果:', data);
@@ -548,6 +548,20 @@
 						title: '无效的语音文件',
 						icon: 'none'
 					});
+					return;
+				}
+				
+				// 如果点击的是当前正在播放的语音，则停止播放
+				if (this.currentPlayingIndex === index) {
+					try {
+						this.currentAudioContext.stop();
+						this.currentAudioContext.destroy();
+						this.currentAudioContext = null;
+						this.$set(this.messages[index], 'isPlaying', false);
+						this.currentPlayingIndex = -1;
+					} catch (e) {
+						console.error('停止当前音频失败:', e);
+					}
 					return;
 				}
 				

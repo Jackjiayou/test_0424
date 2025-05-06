@@ -144,8 +144,8 @@ def vtw(word_str,save_folder='./uploads/tts/'):
         root_folder = save_folder
         now = datetime.now()
         timestamp = int(now.timestamp())
-        file_path = f"{root_folder}{timestamp}.mp3"
-        file_name = f"{timestamp}.mp3"
+        file_path = f"{root_folder}{timestamp}.wav"
+        file_name = f"{timestamp}.wav"
         # 测试时候在此处正确填写相关信息即可运行
         wsParam = Ws_Param(APPID='5f30a0b3', APISecret='MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4',
                            APIKey='d4070941076c1e019907487878384f6c',

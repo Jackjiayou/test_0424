@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Request, Form, File, UploadFile
+from fastapi import FastAPI, HTTPException,   Form, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -9,10 +9,20 @@ import json
 import random
 from datetime import datetime
 import uuid
-from  Ifasr_new import RequestApi
-from  kdxf_tts_vtw import  vtw
+from  text_to_speech import  vtw
+from  personification_text_to_speach import  text_to_speech
 import getds
-import time
+from  speech_to_text_fast   import  speech_to_text as st
+import  traceback
+from  speech_to_text import  RequestApi
+import librosa
+from pydub import AudioSegment
+from pydub.utils import which
+import os
+
+APP_ID = "5f30a0b3"
+API_KEY = "d4070941076c1e01997487878384f6c"
+API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
 
 # 创建FastAPI应用
 app = FastAPI(title="销售培训API", description="销售培训小程序后端API")
@@ -29,7 +39,7 @@ app.add_middleware(
 # 确保上传目录存在
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("uploads/tts", exist_ok=True)
-
+os.makedirs("uploads/voice", exist_ok=True)
 # 挂载静态文件目录
 app.mount("/static", StaticFiles(directory="."), name="static")
 # 挂载上传目录，用于访问语音文件
@@ -217,6 +227,20 @@ suggestion_templates = [
 # 存储报告的字典
 reports = {}
 
+def convert_wav_16k(audio_path):
+    AudioSegment.converter = which("ffmpeg")  # 这句很关键！
+    audio = AudioSegment.from_file(audio_path)
+    # 设置采样率和声道
+    # audio = audio.set_frame_rate(16000).set_channels(1)
+    audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
+    base, _ = os.path.splitext(audio_path)
+    output_path = base + "_16k.wav"
+
+    # 导出音频
+    audio.export(output_path, format="wav")
+
+    return os.path.basename(output_path)
+
 # API路由
 
 @app.get("/")
@@ -286,57 +310,71 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
         fileName += '.wav'
     
     # 保存上传的文件
-    file_location = f"uploads/{fileName}"
-    os.makedirs("uploads", exist_ok=True)
+    file_location = f"uploads/voice/{fileName}"
+    os.makedirs("uploads/voice", exist_ok=True)
     
     try:
         # 确保文件上传成功
         contents = await audio_file.read()
         with open(file_location, "wb") as f:
             f.write(contents)
-        
+
+
+
         # 生成可访问的完整URL
         # 使用新的音频文件路由
         base_url = "http://0.0.0.0:8000"  # 开发环境
         # base_url = "https://your-production-domain.com"  # 生产环境
-        voice_url = f"{base_url}/uploads/{fileName}"
-        local_url = f"./uploads/{fileName}"
+        voice_url = f"{base_url}/uploads/voice/{fileName}"
+        local_url = f"./uploads/voice/{fileName}"
         # TODO: 此处调用您自己的语音识别API
-        api = RequestApi(appid="5f30a0b3",
-                         secret_key="dbfdebbd6299533f00fa97c6e8d1b008",
-                         upload_file_path=local_url
-                         )
-        result = api.get_result()
-        print(len(result))
-        if len(result) == 0:
-            print("receive result end")
-        result1 = json.loads(result['content']['orderResult'])
+        # api = RequestApi(appid="5f30a0b3",
+        #                  secret_key="dbfdebbd6299533f00fa97c6e8d1b008",
+        #                  upload_file_path=local_url
+        #                  )
+        # result = api.get_result()
+        # print(len(result))
+        # if len(result) == 0:
+        #     print("receive result end")
+        # result1 = json.loads(result['content']['orderResult'])
+        #
+        # # 解析结果
+        #
+        # # 解析JSON数据
+        # # data = json.loads(result1['lattice'][0]['json_1best'])
+        # str_result = extract_words_from_lattice2(result1)
 
-        # 解析结果
+        #极速版
+        new_name = convert_wav_16k(local_url)
+        voice_url = f"{base_url}/uploads/voice/{new_name}"
+        APP_ID = "5f30a0b3"
+        API_KEY = "d4070941076c1e019907487878384f6c"
+        API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
 
-        # 解析JSON数据
-        # data = json.loads(result1['lattice'][0]['json_1best'])
-        str_result = extract_words_from_lattice2(result1)
-        
+        new_local_url = fileName.replace('.wav','_16k.wav')
+        new_url = f"./uploads/voice/{new_name}"
+        str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
+        str_result = extract_words_from_lattice2(str_result)
         return {"text":str_result , "voiceUrl": voice_url}
     
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse(
             status_code=500,
             content={"message": f"上传文件处理失败: {str(e)}"}
         )
 
-@app.post("/text-to-speech")
-async def text_to_speech(text: str = Form(...)):
-    """
-    将文本转换为语音
-    这里使用模拟数据，实际项目中应该调用语音合成API
-    """
-    # 模拟文字转语音的结果
-    return {
-        "voiceUrl": "/static/audio/response.mp3",
-        "duration": str(random.randint(3, 10))
-    }
+# @app.post("/text-to-speech")
+# async def text_to_speech(text: str = Form(...)):
+#     """
+#     将文本转换为语音
+#     这里使用模拟数据，实际项目中应该调用语音合成API
+#     """
+#     # 模拟文字转语音的结果
+#     return {
+#         "voiceUrl": "/static/audio/response.mp3",
+#         "duration": str(random.randint(3, 10))
+#     }
 
 @app.post("/analyze")
 async def analyze_message(request: Dict[str, Any]):
@@ -427,62 +465,62 @@ async def get_report(report_id: str):
         raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
     
     return reports[report_id]
-
-@app.get("/generate-temp-audio")
-async def generate_temp_audio(text: str = None):
-    """
-    生成临时语音文件
-    实际项目中应该调用专业的语音合成API
-    """
-    # 生成唯一的文件名
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
-    fileName = f"temp_audio_{timestamp}_{random_str}.wav"
-    
-    # 确保文件名有正确的扩展名
-    if not fileName.endswith(('.wav', '.mp3', '.aac')):
-        fileName += '.wav'
-    
-    # 创建临时文件
-    file_location = f"uploads/{fileName}"
-    os.makedirs("uploads", exist_ok=True)
-    
-    try:
-        # 创建一个简单的WAV文件
-        # 这里我们创建一个1秒的静音WAV文件作为临时文件
-        # 实际项目中应该调用语音合成API生成真实的语音文件
-        with open(file_location, "wb") as f:
-            # WAV文件头
-            f.write(b'RIFF')
-            f.write((36).to_bytes(4, byteorder='little'))  # 文件大小
-            f.write(b'WAVE')
-            f.write(b'fmt ')
-            f.write((16).to_bytes(4, byteorder='little'))  # 格式块大小
-            f.write((1).to_bytes(2, byteorder='little'))   # 音频格式 (1 = PCM)
-            f.write((1).to_bytes(2, byteorder='little'))   # 通道数
-            f.write((16000).to_bytes(4, byteorder='little'))  # 采样率
-            f.write((32000).to_bytes(4, byteorder='little'))  # 字节率
-            f.write((2).to_bytes(2, byteorder='little'))   # 块对齐
-            f.write((16).to_bytes(2, byteorder='little'))  # 位深度
-            f.write(b'data')
-            f.write((0).to_bytes(4, byteorder='little'))   # 数据块大小
-            
-            # 生成1秒的静音数据 (16000Hz * 16bit * 1通道)
-            for _ in range(16000):
-                f.write((0).to_bytes(2, byteorder='little', signed=True))
-        
-        # 生成可访问的完整URL
-        base_url = "http://0.0.0.0:8000"  # 开发环境
-        # base_url = "https://your-production-domain.com"  # 生产环境
-        voice_url = f"{base_url}/audio/{fileName}"
-        
-        return {"voiceUrl": voice_url, "duration": "1"}
-    
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"message": f"生成临时音频文件失败: {str(e)}"}
-        )
+#
+# @app.get("/generate-temp-audio")
+# async def generate_temp_audio(text: str = None):
+#     """
+#     生成临时语音文件
+#     实际项目中应该调用专业的语音合成API
+#     """
+#     # 生成唯一的文件名
+#     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+#     random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
+#     fileName = f"temp_audio_{timestamp}_{random_str}.wav"
+#
+#     # 确保文件名有正确的扩展名
+#     if not fileName.endswith(('.wav', '.mp3', '.aac')):
+#         fileName += '.mp3'
+#
+#     # 创建临时文件
+#     file_location = f"uploads/{fileName}"
+#     os.makedirs("uploads", exist_ok=True)
+#
+#     try:
+#         # 创建一个简单的WAV文件
+#         # 这里我们创建一个1秒的静音WAV文件作为临时文件
+#         # 实际项目中应该调用语音合成API生成真实的语音文件
+#         with open(file_location, "wb") as f:
+#             # WAV文件头
+#             f.write(b'RIFF')
+#             f.write((36).to_bytes(4, byteorder='little'))  # 文件大小
+#             f.write(b'WAVE')
+#             f.write(b'fmt ')
+#             f.write((16).to_bytes(4, byteorder='little'))  # 格式块大小
+#             f.write((1).to_bytes(2, byteorder='little'))   # 音频格式 (1 = PCM)
+#             f.write((1).to_bytes(2, byteorder='little'))   # 通道数
+#             f.write((16000).to_bytes(4, byteorder='little'))  # 采样率
+#             f.write((32000).to_bytes(4, byteorder='little'))  # 字节率
+#             f.write((2).to_bytes(2, byteorder='little'))   # 块对齐
+#             f.write((16).to_bytes(2, byteorder='little'))  # 位深度
+#             f.write(b'data')
+#             f.write((0).to_bytes(4, byteorder='little'))   # 数据块大小
+#
+#             # 生成1秒的静音数据 (16000Hz * 16bit * 1通道)
+#             for _ in range(16000):
+#                 f.write((0).to_bytes(2, byteorder='little', signed=True))
+#
+#         # 生成可访问的完整URL
+#         base_url = "http://0.0.0.0:8000"  # 开发环境
+#         # base_url = "https://your-production-domain.com"  # 生产环境
+#         voice_url = f"{base_url}/audio/{fileName}"
+#
+#         return {"voiceUrl": voice_url, "duration": "1"}
+#
+#     except Exception as e:
+#         return JSONResponse(
+#             status_code=500,
+#             content={"message": f"生成临时音频文件失败: {str(e)}"}
+#         )
 
 @app.post("/polish-text")
 async def polish_text(request: Dict[str, Any]):
@@ -602,13 +640,22 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
             if scene_questions:
                 question = random.choice(scene_questions)
                 text = question["text"]
-
                 file_path = './uploads/tts/'
-                file_name = vtw(text,file_path)
+                # file_name = text_to_speech(text,APP_ID,API_KEY,API_SECRET,file_path)
+                APP_ID = '5f30a0b3'
+                API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
+                API_KEY = 'd4070941076c1e019907487878384f6c'
+                file_name = text_to_speech(text, APP_ID, API_SECRET, API_KEY, file_path)
+
                 # 确保文件名不包含路径分隔符
-                file_name = os.path.basename(file_name)
+                file_name = file_name = os.path.basename(file_name)
+
+                y, sr = librosa.load(file_path+file_name, sr=None)
+
+                # 计算音频时长（秒）
+                duration = librosa.get_duration(y=y, sr=sr)
                 file_path_url = base_url+file_name
-                duration = question["duration"]
+                #duration = question["duration"]
                 return {
                     "text": text,
                     "duration": duration,
@@ -631,14 +678,21 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                     #messages
                     prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，有回答不满意的地方可以直说，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以"
                     robot_words = getds.get_response(prompt_str)
-
+                    APP_ID = '5f30a0b3'
+                    API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
+                    API_KEY = 'd4070941076c1e019907487878384f6c'
 
                     file_path = './uploads/tts/'
-                    file_name = vtw(robot_words, file_path)
+                    file_name = text_to_speech(robot_words,APP_ID,API_SECRET,API_KEY,file_path)
+                    # 使用librosa加载音频文件
+                    y, sr = librosa.load(file_path+file_name, sr=None)
+
+                    # 计算音频时长（秒）
+                    duration = librosa.get_duration(y=y, sr=sr)
                     # 确保文件名不包含路径分隔符
                     file_name = os.path.basename(file_name)
                     file_path_url = base_url + file_name
-                    duration = 5
+
                     return {
                         "text": robot_words,
                         "duration": duration,
@@ -668,7 +722,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
             voice_url = random.choice(voice_urls_for_scene)
         else:
             # 默认语音URL
-            voice_url = f"https://example.com/audio/default.mp3"
+            voice_url = f"https://example.com/audio/default.wav"
         
         # 返回结果
         return {
@@ -678,6 +732,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
         }
     
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"获取机器人消息失败: {str(e)}")
 
 # 启动应用

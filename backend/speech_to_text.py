@@ -113,9 +113,11 @@ def extract_words_from_lattice2(data):
 
 # 输入讯飞开放平台的appid，secret_key和待转写的文件路径
 if __name__ == '__main__':
+    local_url = r".\uploads\tts\1745893151.mp3"
+    local_url = r'.\uploads\voice\audio_1745896840563_3h48fo.mp3'
     api = RequestApi(appid="5f30a0b3",
                      secret_key="dbfdebbd6299533f00fa97c6e8d1b008",
-                     upload_file_path=r"audio/voice_1745203883261.mp3",
+                     upload_file_path=local_url,
                      )
 
     result = api.get_result()
