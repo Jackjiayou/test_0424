@@ -16,36 +16,49 @@
 				<view class="message-content">
 					<!-- 语音消息部分 -->
 					<view class="voice-message-container">
-						<view class="voice-message" :style="{ width: calculateVoiceWidth(msg.duration) }" @click="playVoice(msg.voiceUrl, index)">
-							<view class="voice-icon" :class="{ 'playing': msg.isPlaying }">
-								<span></span>
+						<!-- 只渲染假语音条动画 -->
+						<template v-if="msg.isLoading">
+							<view class="voice-message loading-voice-bar" :style="{ width: calculateVoiceWidth(3) }">
+								<view class="voice-icon loading-voice-icon">
+									<span></span>
+								</view>
+								<view class="voice-duration">...</view>
 							</view>
-							<view class="voice-duration">{{msg.duration}}''</view>
-						</view>
-					</view>  
-					
-					<!-- 文字内容部分 -->
-					<view class="text-content-container">
-						<!-- 文字转录 -->
-						<view class="text-transcript">
-							<text>{{msg.text}}</text>
-						</view>
-						
-						<!-- 改进建议（仅用户消息显示） -->
-						<view v-if="msg.from === 'user'" class="suggestion-wrapper">
-							<view class="suggestion-btn" @click="toggleSuggestion(index)">
-								<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
+						</template>
+						<template v-else>
+							<view class="voice-message" :style="{ width: calculateVoiceWidth(msg.duration) }" @click="playVoice(msg.voiceUrl, index)">
+								<view class="voice-icon" :class="{ 'playing': msg.isPlaying }">
+									<span></span>
+								</view>
+								<view class="voice-duration">{{msg.duration}}''</view>
 							</view>
-							<view  class="suggestion-content" v-if="msg.showSuggestion">
-								<view class="suggestion-title">表达建议</view>
-								<text class="suggestion-text">{{msg.suggestion}}</text>
-								
-								<!-- 润色表达部分 -->
-								<view class="suggestion-title" style="margin-top: 20rpx;">润色表达</view>
-								<text class="suggestion-text">{{msg.polishedText || '正在生成润色表达...'}}</text>
-							</view>
-						</view>
+						</template>
 					</view>
+					
+					<!-- 文字内容部分（假语音条不显示） -->
+					<template v-if="!msg.isLoading">
+						<view class="text-content-container">
+							<!-- 文字转录 -->
+							<view class="text-transcript">
+								<text>{{msg.text}}</text>
+							</view>
+							
+							<!-- 改进建议（仅用户消息显示） -->
+							<view v-if="msg.from === 'user'" class="suggestion-wrapper">
+								<view class="suggestion-btn" @click="toggleSuggestion(index)">
+									<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
+								</view>
+								<view  class="suggestion-content" v-if="msg.showSuggestion">
+									<view class="suggestion-title">表达建议</view>
+									<text class="suggestion-text">{{msg.suggestion}}</text>
+									
+									<!-- 润色表达部分 -->
+									<view class="suggestion-title" style="margin-top: 20rpx;">润色表达</view>
+									<text class="suggestion-text">{{msg.polishedText || '正在生成润色表达...'}}</text>
+								</view>
+							</view>
+						</view>
+					</template>
 				</view>
 			</view>
 		</scroll-view>
@@ -257,13 +270,14 @@
 			// 获取机器人消息
 			async getRobotMessage() {
 				try {
+					const realMessages = this.messages.filter(msg => !(msg.from === 'robot' && msg.isLoading));
 					const response = await uni.request({
 						url: this.apiBaseUrl +'/get-robot-message',
 						method: 'GET',
 						data: {
 							sceneId: this.sceneId,
-							messageCount: this.messages.length,
-							messages: JSON.stringify(this.messages.map(msg => ({
+							messageCount: realMessages.length,
+							messages: JSON.stringify(realMessages.map(msg => ({
 								from: msg.from,
 								text: msg.text
 							}))),
@@ -273,14 +287,21 @@
 						}
 					});
 					if (response.statusCode === 200 && response.data) {
-						this.messages.push({
+						// 2. 替换第一个 isLoading: true 的机器人消息为真实消息
+						const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+						const realMsg = {
 							from: 'robot',
 							text: response.data.text,
 							voiceUrl: response.data.voiceUrl,
 							duration: response.data.duration,
 							timestamp: new Date().toISOString(),
 							isPlaying: false
-						});
+						};
+						if (idx !== -1) {
+							this.$set(this.messages, idx, realMsg);
+						} else {
+							this.messages.push(realMsg);
+						}
 						// 预下载机器人语音
 						if (response.data.voiceUrl) {
 							this.preDownloadVoice(response.data.voiceUrl);
@@ -289,6 +310,9 @@
 							this.scrollToBottom();
 						});
 					} else {
+						// 获取失败时移除假语音条
+						const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+						if (idx !== -1) this.messages.splice(idx, 1);
 						console.error('获取机器人消息失败:', response);
 						uni.showToast({
 							title: '获取消息失败',
@@ -296,6 +320,9 @@
 						});
 					}
 				} catch (error) {
+					// 获取失败时移除假语音条
+					const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+					if (idx !== -1) this.messages.splice(idx, 1);
 					console.error('获取机器人消息失败:', error);
 					uni.showToast({
 						title: '获取消息失败',
@@ -470,6 +497,16 @@
 								}
 								this.getMessageSuggestion(data.text, this.messages.length - 1);
 								this.scrollToBottom();
+								// 1. 立即插入假机器人语音条
+								this.messages.push({
+									from: 'robot',
+									text: '机器人正在回复...',
+									voiceUrl: '',
+									duration: '',
+									isPlaying: false,
+									isLoading: true,
+									timestamp: new Date().toISOString()
+								});
 								setTimeout(() => { this.getRobotMessage(); }, 1500);
 							} else {
 								uni.showToast({ title: '语音识别失败', icon: 'none' });
@@ -1245,5 +1282,20 @@
 	.recording-time {
 		font-size: 28rpx;
 		color: #666;
+	}
+	
+	.loading-voice-bar {
+		background: #e6f7ff;
+		animation: loading-bar-blink 1.2s infinite alternate;
+	}
+	
+	.loading-voice-icon span {
+		background: #1890ff;
+		animation: voice-wave 0.8s infinite linear;
+	}
+	
+	@keyframes loading-bar-blink {
+		0% { opacity: 0.7; }
+		100% { opacity: 1; }
 	}
 </style> 
