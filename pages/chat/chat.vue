@@ -20,7 +20,7 @@
 						<template v-if="msg.isLoading">
 							<view class="voice-message loading-voice-bar" :style="{ width: calculateVoiceWidth(3) }">
 								<view class="voice-icon loading-voice-icon">
-									<span></span>
+									<span></span> 
 								</view>
 								<view class="voice-duration">...</view>
 							</view>
