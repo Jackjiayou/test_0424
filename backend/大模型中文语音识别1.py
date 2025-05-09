@@ -241,7 +241,7 @@ if __name__ == "__main__":
     # 测试时候在此处正确填写相关信息即可运行
     audio_path = r"audio/1745724901.mp3"
     #audio_path = r".\uploads\audio_1745745193084_7nq9fa.mp3"
-    audio_path = r".\uploads\voice\今天是星期几_16k.wav"
+    audio_path = r".\uploads\voice\audio_1746682571974_zsoi06_16k.mp3"
     wsParam = Ws_Param(APPID='5f30a0b3', APISecret='MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4',
                        APIKey='d4070941076c1e019907487878384f6c',
                        AudioFile=audio_path)
