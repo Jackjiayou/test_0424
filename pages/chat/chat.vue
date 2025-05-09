@@ -103,8 +103,8 @@
 				username: '', // 用户名
 				conversationId: '', // 对话ID
 				// API地址配置
-				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
-                apiBaseUrl: 'http://182.92.109.197',
+				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
+                //apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
 				showRecordingOverlay: false, // 是否显示录音提示浮层
 				recordingTipText: '准备录音...', // 录音提示文本
@@ -239,13 +239,26 @@
 				//   }
 				// });
 			},
+			// 预下载音频文件
+			preDownloadVoice(voiceUrl) {
+				if (!voiceUrl || !voiceUrl.startsWith('http')) return;
+				uni.downloadFile({
+					url: voiceUrl,
+					success: (res) => {
+						if (res.statusCode === 200) {
+							const idx = this.messages.findIndex(msg => msg.voiceUrl === voiceUrl);
+							if (idx !== -1) {
+								this.$set(this.messages[idx], 'voiceUrl', res.tempFilePath);
+							}
+						}
+					}
+				});
+			},
 			// 获取机器人消息
 			async getRobotMessage() {
 				try {
-					// 调用后端API获取机器人消息
 					const response = await uni.request({
-						//url: 'http://localhost:8000/get-robot-message',
-                        url: this.apiBaseUrl +'/get-robot-message',
+						url: this.apiBaseUrl +'/get-robot-message',
 						method: 'GET',
 						data: {
 							sceneId: this.sceneId,
@@ -259,9 +272,7 @@
 							conversationId: this.conversationId
 						}
 					});
-					
 					if (response.statusCode === 200 && response.data) {
-						// 添加机器人消息
 						this.messages.push({
 							from: 'robot',
 							text: response.data.text,
@@ -270,8 +281,10 @@
 							timestamp: new Date().toISOString(),
 							isPlaying: false
 						});
-						
-						// 滚动到底部
+						// 预下载机器人语音
+						if (response.data.voiceUrl) {
+							this.preDownloadVoice(response.data.voiceUrl);
+						}
 						this.$nextTick(() => {
 							this.scrollToBottom();
 						});
@@ -421,83 +434,56 @@
 			},
 			// 上传语音并获取文本转写
 			uploadVoiceAndGetText(voicePath, duration) {
-				// 显示上传中提示
-				uni.showLoading({
-					title: '转写分析中...'
-				});
-				
-				// 生成唯一的文件名
+				uni.showLoading({ title: '转写分析中...' });
 				const timestamp = new Date().getTime();
 				const randomStr = Math.random().toString(36).substring(2, 8);
 				const fileName = `audio_${timestamp}_${randomStr}.mp3`;
-				
-				// 上传语音文件
 				uni.uploadFile({
 					url: `${this.apiBaseUrl}/speech-to-text`,
 					filePath: voicePath,
 					name: 'audio_file',
 					formData: {
-						userId: this.userId, // 用户ID
-						username: this.username, // 用户名
-						conversationId: this.conversationId, // 对话ID
+						userId: this.userId,
+						username: this.username,
+						conversationId: this.conversationId,
 						sceneId: this.sceneId,
-						fileName: fileName  // 传递文件名到后端
+						fileName: fileName
 					},
 					success: (uploadRes) => {
-						// 解析返回结果 
 						try {
 							const data = JSON.parse(uploadRes.data);
-							console.log('语音转文字结果:', data);
-							
 							if (data.text) {
-								// 添加用户消息
 								const userMessage = {
 									from: 'user',
 									text: data.text,
-									voiceUrl: data.voiceUrl || voicePath, // 优先使用服务器返回的URL
+									voiceUrl: data.voiceUrl || voicePath,
 									duration: duration.toString(),
 									suggestion: '',
-									polishedText: '', // 添加润色文本字段
+									polishedText: '',
 									showSuggestion: false,
-									isPlaying: false // 添加播放状态字段
+									isPlaying: false
 								};
-								
 								this.messages.push(userMessage);
-								
-								// 获取改进建议
+								// 预下载用户语音
+								if (data.voiceUrl) {
+									this.preDownloadVoice(data.voiceUrl);
+								}
 								this.getMessageSuggestion(data.text, this.messages.length - 1);
-								
-								// 滚动到底部
 								this.scrollToBottom();
-								
-								// 从后端获取机器人回复
-								setTimeout(() => {
-									this.getRobotMessage();
-								}, 1500);
+								setTimeout(() => { this.getRobotMessage(); }, 1500);
 							} else {
-								uni.showToast({
-									title: '语音识别失败',
-									icon: 'none'
-								});
+								uni.showToast({ title: '语音识别失败', icon: 'none' });
 							}
 						} catch (e) {
 							console.error('解析语音识别结果失败:', e);
-							uni.showToast({
-								title: '语音识别失败',
-								icon: 'none'
-							});
+							uni.showToast({ title: '语音识别失败', icon: 'none' });
 						}
 					},
 					fail: (err) => {
 						console.error('上传语音失败:', err);
-						uni.showToast({
-							title: '上传语音失败',
-							icon: 'none'
-						});
+						uni.showToast({ title: '上传语音失败', icon: 'none' });
 					},
-					complete: () => {
-						uni.hideLoading();
-					}
+					complete: () => { uni.hideLoading(); }
 				});
 			},
 			// 获取消息改进建议
