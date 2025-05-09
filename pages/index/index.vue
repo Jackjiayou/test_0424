@@ -1,39 +1,52 @@
 <template>
-	<view class="container">
-		<!-- 员工信息区域 -->
-		<view class="user-profile">
-			<image class="avatar" :src="userInfo.avatar"></image>
-			<view class="user-info">
-				<text class="username">{{userInfo.name}}</text>
-				<text class="practice-count">练习次数: {{userInfo.practiceCount}}</text>
+	<view class="main-bg">
+		<!-- 顶部栏 -->
+		<view class="top-bar">
+			<text class="title">培训</text>
+			<view class="top-icons">
+				<uni-icons type="settings" size="24" color="#333" />
+				<uni-icons type="more-filled" size="24" color="#333" style="margin-left: 16rpx;" />
 			</view>
 		</view>
-		
-		<!-- 主菜单 -->
-		<view class="main-menu">
-			<view class="menu-title">练习场景</view>
-			<view class="scenes-list">
-				<view 
-					v-for="(scene, index) in scenes" 
-					:key="index" 
-					class="scene-item"
-					@click="goToScene(scene)">
-					<image class="scene-icon" :src="scene.icon"></image>
-					<text class="scene-name">{{scene.name}}</text>
+		<!-- 用户信息卡片 -->
+		<view class="card user-card">
+			<image class="avatar" :src="userInfo.avatar"></image>
+			<text class="username">{{userInfo.name}}</text>
+			<view class="user-stats">
+				<view class="stat-item">
+					<text class="stat-value">12</text>
+					<text class="stat-label">练习次数</text>
+				</view>
+				<view class="stat-item">
+					<text class="stat-value">3.5h</text>
+					<text class="stat-label">练习时长</text>
+				</view>
+				<view class="stat-item">
+					<text class="stat-value">4</text>
+					<text class="stat-label">练习场景</text>
 				</view>
 			</view>
 		</view>
-		
-		<!-- 底部选项卡 -->
-		<view class="tab-bar">
-			<view class="tab-item active">
-				<text class="tab-text">练习场景</text>
+		<!-- 功能入口卡片 -- >   
+		<view class="card func-card"> 
+			<view class="func-item" @click="goToRanking"> 
+				<image class="func-icon" src="http://182.92.109.197/uploads/static/rank.png"></image>
+				<text class="func-label">排行榜</text>
 			</view>
-			<view class="tab-item" @click="goToRanking">
-				<text class="tab-text">排行榜</text>
+			<view class="func-item" @click="goToRecords">
+				<image class="func-icon" src="http://182.92.109.197/uploads/static/record.png"></image>
+				<text class="func-label">练习记录</text>
 			</view>
-			<view class="tab-item" @click="goToRecords">
-				<text class="tab-text">练习记录</text>
+		</view>
+		<!-- 练习场景卡片 -->
+		<view class="card scene-card">
+			<view class="scene-title">练习场景</view>
+			<view v-for="scene in scenes" :key="scene.id" class="scene-list-item" @click="goToScene(scene)">
+				<image class="scene-list-icon" :src="scene.icon"></image>
+				<view class="scene-list-info">
+					<text class="scene-list-name">{{scene.name}}</text>
+					<text class="scene-list-desc">{{scene.description}}</text>
+				</view>
 			</view>
 		</view>
 	</view>
@@ -44,38 +57,33 @@
 		data() {
 			return {
 				userInfo: {
-					avatar: '/static/avatar.png',
-					name: '张三',
-					practiceCount: 12
+					avatar: 'http://182.92.109.197/uploads/static/user-avatar.png',
+					name: '张经理',
 				},
 				scenes: [
 					{
 						id: 1,
 						name: '新客户开发',
 						description: '针对首次接触的潜在客户，学习如何有效地介绍产品和建立信任',
-						goal: '学习如何快速建立与新客户的信任关系，引起客户对产品的兴趣',
-						icon: '/static/scene1.png'
+						icon: 'http://182.92.109.197/uploads/static/scene1.png'
 					},
 					{
 						id: 2,
 						name: '异议处理',
 						description: '学习如何面对客户提出的各种异议，并有效地进行回应',
-						goal: '掌握处理客户异议的技巧，将异议转化为销售机会',
-						icon: '/static/scene2.png'
+						icon: 'http://182.92.109.197/uploads/static/scene2.png'
 					},
 					{
 						id: 3,
 						name: '产品推荐',
 						description: '根据客户需求，推荐最合适的产品，提高销售成功率',
-						goal: '学习如何精准分析客户需求，进行有针对性的产品推荐',
-						icon: '/static/scene3.png'
+						icon: 'http://182.92.109.197/uploads/static/scene3.png'
 					},
 					{
 						id: 4,
 						name: '成交技巧',
 						description: '学习如何引导客户做出购买决定，顺利完成销售',
-						goal: '掌握成交的时机把握和话术技巧，提高成交率',
-						icon: '/static/scene4.png'
+						icon: 'http://182.92.109.197/uploads/static/scene4.png'
 					}
 				]
 			}
@@ -131,106 +139,137 @@
 </script>
 
 <style>
-	.container {
-		padding: 30rpx;
-		display: flex;
-		flex-direction: column;
-		height: 100vh;
-		box-sizing: border-box;
+	.main-bg {
+		min-height: 100vh;
+		background: #f7f7f7;
+		padding: 0 0 40rpx 0;
 	}
-	
-	.user-profile {
+	.top-bar {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		height: 100rpx;
+		position: relative;
+		background: #fff;
+		margin-bottom: 20rpx;
+	}
+	.title {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: #222;
+	}
+	.top-icons {
+		position: absolute;
+		right: 30rpx;
+		top: 50%;
+		transform: translateY(-50%);
 		display: flex;
 		align-items: center;
-		padding: 20rpx;
-		background-color: #f8f8f8;
-		border-radius: 12rpx;
-		margin-bottom: 30rpx;
 	}
-	
+	.card {
+		background: #fff;
+		border-radius: 20rpx;
+		box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+		margin: 0 24rpx 24rpx 24rpx;
+		padding: 32rpx 24rpx;
+	}
+	.user-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-top: 10rpx;
+	}
 	.avatar {
 		width: 120rpx;
 		height: 120rpx;
 		border-radius: 60rpx;
-		margin-right: 20rpx;
+		margin-bottom: 16rpx;
+		background: #e5e5e5;
 	}
-	
-	.user-info {
+	.username {
+		font-size: 34rpx;
+		font-weight: bold;
+		margin-bottom: 18rpx;
+	}
+	.user-stats {
+		display: flex;
+		width: 100%;
+		justify-content: space-around;
+		margin-top: 8rpx;
+	}
+	.stat-item {
 		display: flex;
 		flex-direction: column;
+		align-items: center;
 	}
-	
-	.username {
-		font-size: 36rpx;
-		font-weight: bold;
-		margin-bottom: 10rpx;
-	}
-	
-	.practice-count {
-		font-size: 28rpx;
-		color: #666;
-	}
-	
-	.main-menu {
-		flex: 1;
-		overflow: hidden;
-	}
-	
-	.menu-title {
+	.stat-value {
+		color: #1AAD19;
 		font-size: 32rpx;
 		font-weight: bold;
-		margin-bottom: 20rpx;
 	}
-	
-	.scenes-list {
+	.stat-label {
+		color: #888;
+		font-size: 22rpx;
+		margin-top: 4rpx;
+	}
+	.func-card {
 		display: flex;
-		flex-wrap: wrap;
 		justify-content: space-between;
+		align-items: center;
+		padding: 24rpx 24rpx;
 	}
-	
-	.scene-item {
-		width: 48%;
-		background-color: #ffffff;
-		border-radius: 12rpx;
-		padding: 20rpx;
-		margin-bottom: 20rpx;
-		box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+	.func-item {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-	}
-	
-	.scene-icon {
-		width: 100rpx;
-		height: 100rpx;
-		margin-bottom: 10rpx;
-	}
-	
-	.scene-name {
-		font-size: 28rpx;
-		text-align: center;
-	}
-	
-	.tab-bar {
-		display: flex;
-		height: 100rpx;
-		border-top: 1rpx solid #eee;
-		background-color: #fff;
-	}
-	
-	.tab-item {
-		flex: 1;
-		display: flex;
 		justify-content: center;
-		align-items: center;
+		padding: 12rpx 0;
 	}
-	
-	.active {
-		color: #007AFF;
-		border-top: 4rpx solid #007AFF;
+	.func-icon {
+		width: 64rpx;
+		height: 64rpx;
+		margin-bottom: 8rpx;
 	}
-	
-	.tab-text {
+	.func-label {
+		font-size: 26rpx;
+		color: #333;
+	}
+	.scene-card {
+		padding: 24rpx 24rpx;
+	}
+	.scene-title {
 		font-size: 28rpx;
+		font-weight: bold;
+		margin-bottom: 18rpx;
+		color: #222;
+	}
+	.scene-list-item {
+		display: flex;
+		align-items: center;
+		padding: 18rpx 0;
+		border-bottom: 1rpx solid #f0f0f0;
+	}
+	.scene-list-item:last-child {
+		border-bottom: none;
+	}
+	.scene-list-icon {
+		width: 56rpx;
+		height: 56rpx;
+		margin-right: 18rpx;
+	}
+	.scene-list-info {
+		display: flex;
+		flex-direction: column;
+	}
+	.scene-list-name {
+		font-size: 26rpx;
+		font-weight: bold;
+		color: #222;
+	}
+	.scene-list-desc {
+		font-size: 22rpx;
+		color: #888;
+		margin-top: 4rpx;
 	}
 </style>

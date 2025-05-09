@@ -8,6 +8,18 @@ import re
 import time
 import  json
 from fileupload import seve_file
+import  logging
+import  traceback
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 class SpeechToText:
     def __init__(self, app_id, api_key, api_secret):
@@ -95,7 +107,7 @@ class SpeechToText:
             "data": {
                 "audio_src": "http",
                 "audio_url": file_url,
-                "encoding": "raw"
+                "encoding": "lame"
             }
         })
 
@@ -184,7 +196,9 @@ class SpeechToText:
                 time.sleep(2)  # 等待2秒后再次查询
                 
         except Exception as e:
+            logger.error( traceback.format_exc())
             raise Exception(f"语音识别失败: {str(e)}")
+
 
 def speech_to_text(audio_file, app_id, api_key, api_secret):
     """
@@ -212,7 +226,8 @@ if __name__ == "__main__":
     API_KEY = "d4070941076c1e019907487878384f6c"
     API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
     local_url = r".\uploads\tts\1745980823.mp3"
-    local_url = r'.\uploads\voice\今天是星期几_16k.wav'
+    local_url = r'E:\work\code\test_uniapp\test_0424\backend\uploads\voice\问题0508\audio_1746676895529_4u33xs_16k.mp3'
+
     #audio_1745982238812_bvse6m_16k  audio_1745981871245_gq2j8n_16k
     try:
         result = speech_to_text(local_url, APP_ID, API_KEY, API_SECRET)

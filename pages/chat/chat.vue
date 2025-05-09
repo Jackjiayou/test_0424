@@ -3,23 +3,26 @@
 		<!-- 头部信息 -->
 		<view class="chat-header">
 			<text class="scene-name">{{sceneName}}</text>
-			<button class="end-btn" @click="endPractice">结束</button>
+			<button class="end-btn" @click="endPractice">结束 </button>
 		</view>
 		
 		<!-- 聊天消息区域 -->
 		<scroll-view class="chat-messages" :scroll-y="true" :scroll-into-view="'msg-' + messages.length" :scroll-with-animation="true" ref="chatScroll">
 			<view v-for="(msg, index) in messages" :key="index" :id="'msg-' + (index + 1)" class="message-item" :class="{ 'robot': msg.from === 'robot', 'user': msg.from === 'user' }">
 				<view class="message-avatar">
-					<image :src="msg.from === 'robot' ? '/static/robot-avatar.png' : '/static/user-avatar.png'"></image>
+					<!--<image :src="msg.from === 'robot' ? '/static/robot-avatar.png' : '/static/user-avatar.png'"></image> -->
+                    <image :src="msg.from === 'robot' ? 'http://182.92.109.197/uploads/static/robot-avatar.png' : 'http://182.92.109.197/uploads/static/user-avatar.png'"></image>
 				</view>
 				<view class="message-content">
 					<!-- 语音消息部分 -->
 					<view class="voice-message-container">
 						<view class="voice-message" :style="{ width: calculateVoiceWidth(msg.duration) }" @click="playVoice(msg.voiceUrl, index)">
-							<image class="voice-icon" :class="{ 'playing': msg.isPlaying }" src="/static/voice-icon.png"></image>
+							<view class="voice-icon" :class="{ 'playing': msg.isPlaying }">
+								<span></span>
+							</view>
 							<view class="voice-duration">{{msg.duration}}''</view>
 						</view>
-					</view>
+					</view>  
 					
 					<!-- 文字内容部分 -->
 					<view class="text-content-container">
@@ -31,9 +34,9 @@
 						<!-- 改进建议（仅用户消息显示） -->
 						<view v-if="msg.from === 'user'" class="suggestion-wrapper">
 							<view class="suggestion-btn" @click="toggleSuggestion(index)">
-								<text>查看改进建议</text>
+								<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
 							</view>
-							<view class="suggestion-content" v-if="msg.showSuggestion">
+							<view  class="suggestion-content" v-if="msg.showSuggestion">
 								<view class="suggestion-title">表达建议</view>
 								<text class="suggestion-text">{{msg.suggestion}}</text>
 								
@@ -95,8 +98,13 @@
 				showEndDialog: false,
 				recorderManager: null, // 录音管理器
 				currentVoicePath: '', // 当前录音文件路径
+				// 用户信息
+				userId: '', // 用户ID
+				username: '', // 用户名
+				conversationId: '', // 对话ID
 				// API地址配置
-				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
+				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
+                apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
 				showRecordingOverlay: false, // 是否显示录音提示浮层
 				recordingTipText: '准备录音...', // 录音提示文本
@@ -192,6 +200,19 @@
 		onLoad(options) {
 			if (options.sceneId) {
 				this.sceneId = parseInt(options.sceneId);
+				// 获取用户信息
+				const userInfo = uni.getStorageSync('userInfo');
+				if (userInfo) {
+					this.userId = userInfo.userId;
+					this.username = userInfo.username;
+				} else {
+					// 如果没有用户信息，生成临时用户ID
+					this.userId = 'temp_' + Date.now();
+					this.username = '游客';
+				}
+				// 生成对话ID
+				this.conversationId = 'conv_' + Date.now();
+				
 				this.getSceneInfo();
 				// 初始化录音管理器
 				this.initRecorder();
@@ -223,12 +244,19 @@
 				try {
 					// 调用后端API获取机器人消息
 					const response = await uni.request({
-						url: 'http://localhost:8000/get-robot-message',
+						//url: 'http://localhost:8000/get-robot-message',
+                        url: this.apiBaseUrl +'/get-robot-message',
 						method: 'GET',
 						data: {
 							sceneId: this.sceneId,
 							messageCount: this.messages.length,
-							messages: JSON.stringify(this.messages)
+							messages: JSON.stringify(this.messages.map(msg => ({
+								from: msg.from,
+								text: msg.text
+							}))),
+							userId: this.userId,
+							username: this.username,
+							conversationId: this.conversationId
 						}
 					});
 					
@@ -316,7 +344,7 @@
 							sampleRate: 16000, // 采样率
 							numberOfChannels: 1, // 录音通道数
 							encodeBitRate: 96000, // 编码码率
-							format: 'wav', // 修改为wav格式，兼容性更好
+							format: 'mp3', // 修改为mp3格式，兼容性更好
 							frameSize: 50 // 指定帧大小，单位KB
 						};
 						
@@ -351,7 +379,7 @@
 				
 				console.log('结束录音');
 				this.isRecording = false;
-				this.recordingTipText = '处理中...';
+				this.recordingTipText = '发送中...';
 				
 				// 清除计时器
 				clearInterval(this.recordingTimer);
@@ -395,13 +423,13 @@
 			uploadVoiceAndGetText(voicePath, duration) {
 				// 显示上传中提示
 				uni.showLoading({
-					title: '处理中...'
+					title: '转写分析中...'
 				});
 				
 				// 生成唯一的文件名
 				const timestamp = new Date().getTime();
 				const randomStr = Math.random().toString(36).substring(2, 8);
-				const fileName = `audio_${timestamp}_${randomStr}.wav`;
+				const fileName = `audio_${timestamp}_${randomStr}.mp3`;
 				
 				// 上传语音文件
 				uni.uploadFile({
@@ -409,6 +437,9 @@
 					filePath: voicePath,
 					name: 'audio_file',
 					formData: {
+						userId: this.userId, // 用户ID
+						username: this.username, // 用户名
+						conversationId: this.conversationId, // 对话ID
 						sceneId: this.sceneId,
 						fileName: fileName  // 传递文件名到后端
 					},
@@ -601,69 +632,69 @@
 								// 下载成功，使用本地路径播放
 								this.currentAudioContext.src = res.tempFilePath;
 								console.log('使用下载的本地文件播放:', res.tempFilePath);
-								
-								// 监听播放开始
-								this.currentAudioContext.onPlay(() => {
-									console.log('开始播放');
-								});
-								
-								// 监听播放错误
-								this.currentAudioContext.onError((err) => {
-									console.error('播放错误:', err);
-									console.error('播放失败的URL:', voiceUrl);
-									
-									// 重置播放状态
-									this.$set(this.messages[index], 'isPlaying', false);
-									this.currentPlayingIndex = -1;
-									
-									// 释放资源
-									try {
-										this.currentAudioContext.destroy();
-										this.currentAudioContext = null;
-									} catch (e) {
-										console.error('销毁音频上下文失败:', e);
-									}
-								});
-								
-								// 监听播放结束
-								this.currentAudioContext.onEnded(() => {
-									console.log('播放结束');
-									// 重置播放状态
-									this.$set(this.messages[index], 'isPlaying', false);
-									this.currentPlayingIndex = -1;
-									
-									// 释放资源
-									try {
-										this.currentAudioContext.destroy();
-										this.currentAudioContext = null;
-									} catch (e) {
-										console.error('销毁音频上下文失败:', e);
-									}
-								});
-								
-								// 开始播放
-								try {
-									this.currentAudioContext.play();
-								} catch (e) {
-									console.error('播放音频失败:', e);
-									// 重置播放状态
-									this.$set(this.messages[index], 'isPlaying', false);
-									this.currentPlayingIndex = -1;
-								}
-							} else {
+				
+				// 监听播放开始
+				this.currentAudioContext.onPlay(() => {
+					console.log('开始播放');
+				});
+				
+				// 监听播放错误
+				this.currentAudioContext.onError((err) => {
+					console.error('播放错误:', err);
+					console.error('播放失败的URL:', voiceUrl);
+					
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+					
+					// 释放资源
+					try {
+						this.currentAudioContext.destroy();
+						this.currentAudioContext = null;
+					} catch (e) {
+						console.error('销毁音频上下文失败:', e);
+					}
+				});
+				
+				// 监听播放结束
+				this.currentAudioContext.onEnded(() => {
+					console.log('播放结束');
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+					
+					// 释放资源
+					try {
+						this.currentAudioContext.destroy();
+						this.currentAudioContext = null;
+					} catch (e) {
+						console.error('销毁音频上下文失败:', e);
+					}
+				});
+				
+				// 开始播放
+				try {
+					this.currentAudioContext.play();
+				} catch (e) {
+					console.error('播放音频失败:', e);
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+				}
+					} else {
 								console.error('下载失败，状态码:', res.statusCode);
 								
 								// 重置播放状态
 								this.$set(this.messages[index], 'isPlaying', false);
 								this.currentPlayingIndex = -1;
-							}
-						},
-						fail: (err) => {
+						}
+					},
+					fail: (err) => {
 							console.error('下载失败:', err);
 							
 							// 重置播放状态
-							this.$set(this.messages[index], 'isPlaying', false);
-							this.currentPlayingIndex = -1;
+						this.$set(this.messages[index], 'isPlaying', false);
+						this.currentPlayingIndex = -1;
 						}
 					});
 				} else {
@@ -673,56 +704,56 @@
 						success: () => {
 							this.currentAudioContext.src = voiceUrl;
 							console.log('使用本地文件播放:', voiceUrl);
-							
-							// 监听播放开始
-							this.currentAudioContext.onPlay(() => {
-								console.log('开始播放');
-							});
-							
-							// 监听播放错误
-							this.currentAudioContext.onError((err) => {
-								console.error('播放错误:', err);
-								console.error('播放失败的URL:', voiceUrl);
-								
-								// 重置播放状态
-								this.$set(this.messages[index], 'isPlaying', false);
-								this.currentPlayingIndex = -1;
-								
-								// 释放资源
-								try {
-									this.currentAudioContext.destroy();
-									this.currentAudioContext = null;
-								} catch (e) {
-									console.error('销毁音频上下文失败:', e);
-								}
-							});
-							
-							// 监听播放结束
-							this.currentAudioContext.onEnded(() => {
-								console.log('播放结束');
-								// 重置播放状态
-								this.$set(this.messages[index], 'isPlaying', false);
-								this.currentPlayingIndex = -1;
-								
-								// 释放资源
-								try {
-									this.currentAudioContext.destroy();
-									this.currentAudioContext = null;
-								} catch (e) {
-									console.error('销毁音频上下文失败:', e);
-								}
-							});
-							
-							// 开始播放
-							try {
-								this.currentAudioContext.play();
-							} catch (e) {
-								console.error('播放音频失败:', e);
-								// 重置播放状态
-								this.$set(this.messages[index], 'isPlaying', false);
-								this.currentPlayingIndex = -1;
-							}
-						},
+				
+				// 监听播放开始
+				this.currentAudioContext.onPlay(() => {
+					console.log('开始播放');
+				});
+				
+				// 监听播放错误
+				this.currentAudioContext.onError((err) => {
+					console.error('播放错误:', err);
+					console.error('播放失败的URL:', voiceUrl);
+					
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+					
+					// 释放资源
+					try {
+						this.currentAudioContext.destroy();
+						this.currentAudioContext = null;
+					} catch (e) {
+						console.error('销毁音频上下文失败:', e);
+					}
+				});
+				
+				// 监听播放结束
+				this.currentAudioContext.onEnded(() => {
+					console.log('播放结束');
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+					
+					// 释放资源
+					try {
+						this.currentAudioContext.destroy();
+						this.currentAudioContext = null;
+					} catch (e) {
+						console.error('销毁音频上下文失败:', e);
+					}
+				});
+				
+				// 开始播放
+				try {
+					this.currentAudioContext.play();
+				} catch (e) {
+					console.error('播放音频失败:', e);
+					// 重置播放状态
+					this.$set(this.messages[index], 'isPlaying', false);
+					this.currentPlayingIndex = -1;
+				}
+			},
 						fail: () => {
 							console.error('文件不存在:', voiceUrl);
 							
@@ -782,8 +813,8 @@
 				uni.request({
 					url: `${this.apiBaseUrl}/report`,
 					method: 'POST',
-					data: {
-						sceneId: this.sceneId,
+						data: {
+							sceneId: this.sceneId,
 						userId: 'user1', // 实际中应使用真实用户ID
 						messages: this.formatMessagesForAnalysis()
 					},
@@ -906,54 +937,98 @@
 		align-items: center;
 		padding: 15rpx 20rpx;
 		border-radius: 8rpx;
-		background-color: rgba(0, 0, 0, 0.05);
+		background-color: #fff;
 		width: fit-content;
 		min-width: 120rpx;
 		transition: width 0.3s ease;
+		position: relative;
 	}
 	
-	.robot .voice-message {
-		background-color: rgba(0, 122, 255, 0.2);
-		border: 1rpx solid rgba(0, 122, 255, 0.3);
+	.user .voice-message {
+		flex-direction: row-reverse;
+		background-color: #95EC69;
 	}
 	
 	.voice-icon {
 		width: 40rpx;
 		height: 40rpx;
 		margin-right: 10rpx;
-		transition: all 0.3s ease;
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	
+	.user .voice-icon {
+		margin-right: 0;
+		margin-left: 10rpx;
+	}
+	
+	.voice-icon::before,
+	.voice-icon::after,
+	.voice-icon span {
+		content: '';
+		width: 4rpx;
+		height: 16rpx;
+		background: #666;
+		border-radius: 4rpx 4rpx 0 0;
+		transform-origin: bottom;
+	}
+	
+	.user .voice-icon::before,
+	.user .voice-icon::after,
+	.user .voice-icon span {
+		background: #666;
+	}
+	
+	.voice-icon.playing::before,
+	.voice-icon.playing::after,
+	.voice-icon.playing span {
+		animation: voice-wave 1.5s ease-in-out infinite;
+	}
+	
+	.voice-icon.playing::before {
+		animation-delay: 0s;
+	}
+	
+	.voice-icon.playing span {
+		animation-delay: 0.2s;
+	}
+	
+	.voice-icon.playing::after {
+		animation-delay: 0.4s;
+	}
+	
+	@keyframes voice-wave {
+		0%, 100% {
+			transform: scaleY(1);
+		}
+		50% {
+			transform: scaleY(1.5);
+		}
 	}
 	
 	.robot .voice-icon {
 		filter: brightness(0) saturate(100%) invert(40%) sepia(82%) saturate(1644%) hue-rotate(199deg) brightness(97%) contrast(101%);
 	}
 	
-	.voice-icon.playing {
+	.robot .voice-icon.playing {
 		animation: voice-wave 1.5s ease-in-out infinite;
-	}
-	
-	@keyframes voice-wave {
-		0% {
-			transform: scale(1);
-			opacity: 1;
-		}
-		50% {
-			transform: scale(1.1);
-			opacity: 0.9;
-		}
-		100% {
-			transform: scale(1);
-			opacity: 1;
-		}
+		transform-origin: center;
 	}
 	
 	.voice-duration {
 		font-size: 24rpx;
+		color: #666;
+	}
+	
+	.user .voice-duration {
+		margin-right: 10rpx;
+		color: #666;
 	}
 	
 	.robot .voice-duration {
-		color: #007AFF;
-		font-weight: 500;
+		color: #666;
 	}
 	
 	.text-content-container {
@@ -964,13 +1039,17 @@
 	}
 	
 	.robot .text-content-container {
-		background-color: #007AFF;
-		color: #fff;
+		background-color: #fff;
+		color: #333;
 	}
 	
 	.text-transcript {
 		font-size: 28rpx;
 		line-height: 1.4;
+	}
+	
+	.robot .text-transcript {
+		color: #333;
 	}
 	
 	.suggestion-wrapper {

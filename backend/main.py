@@ -19,7 +19,20 @@ import librosa
 from pydub import AudioSegment
 from pydub.utils import which
 import os
+import logging
 
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+base_url = "http://localhost:8000"  # 开发环境
+#base_url = "http://182.92.109.197"  # 生产环境
+logger = logging.getLogger(__name__)
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
 API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
@@ -36,14 +49,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 修改文件路径，使用os.path.join确保跨平台兼容
 # 确保上传目录存在
-os.makedirs("uploads", exist_ok=True)
-os.makedirs("uploads/tts", exist_ok=True)
-os.makedirs("uploads/voice", exist_ok=True)
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "tts"), exist_ok=True)
+os.makedirs(os.path.join(UPLOAD_DIR, "voice"), exist_ok=True)
+
 # 挂载静态文件目录
-app.mount("/static", StaticFiles(directory="."), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".")), name="static")
 # 挂载上传目录，用于访问语音文件
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+
+
+#
+# # 确保上传目录存在
+# os.makedirs("uploads", exist_ok=True)
+# os.makedirs("uploads/tts", exist_ok=True)
+# os.makedirs("uploads/voice", exist_ok=True)
+# # 挂载静态文件目录
+# app.mount("/static", StaticFiles(directory="."), name="static")
+# # 挂载上传目录，用于访问语音文件
+# app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+
+# 创建用户和对话相关的目录结构
+def ensure_user_dirs(user_id: str, conversation_id: str):
+    # 用户目录
+    user_dir = f"uploads/users/{user_id}"
+    os.makedirs(user_dir, exist_ok=True)
+
+    # 对话目录
+    conversation_dir = f"{user_dir}/conversations/{conversation_id}"
+    os.makedirs(f"{conversation_dir}/tts", exist_ok=True)
+    os.makedirs(f"{conversation_dir}/voice", exist_ok=True)
+
+    return conversation_dir
+
 
 # 添加直接访问音频文件的路由
 @app.get("/audio/{filename}")
@@ -227,23 +269,23 @@ suggestion_templates = [
 # 存储报告的字典
 reports = {}
 
-def convert_wav_16k(audio_path):
+def convert_mp3_16k(audio_path):
     AudioSegment.converter = which("ffmpeg")  # 这句很关键！
     audio = AudioSegment.from_file(audio_path)
     # 设置采样率和声道
     # audio = audio.set_frame_rate(16000).set_channels(1)
     audio = audio.set_frame_rate(16000).set_channels(1).set_sample_width(2)
     base, _ = os.path.splitext(audio_path)
-    output_path = base + "_16k.wav"
+    output_path = base + "_16k.mp3"
 
     # 导出音频
-    audio.export(output_path, format="wav")
+    audio.export(output_path, format="mp3")
 
     return os.path.basename(output_path)
 
 # API路由
-
-@app.get("/")
+    
+@app.get("/test")
 async def root():
     return {"message": "销售培训API服务运行正常"}
 
@@ -292,7 +334,9 @@ def extract_words_from_lattice2(data):
     return ''.join(text_parts)
 
 @app.post("/speech-to-text")
-async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form(None), fileName: str = Form(None)):
+async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form(None), fileName: str = Form(None),
+    userId: str = Form(...),
+    conversationId: str = Form(...)):
     """
     将上传的语音文件转换为文本
     实际项目中应调用专业的语音识别API（如百度语音、讯飞语音等）
@@ -303,11 +347,11 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
     if not fileName:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
-        fileName = f"audio_{timestamp}_{random_str}.wav"
+        fileName = f"audio_{timestamp}_{random_str}.mp3"
     
     # 确保文件名有正确的扩展名
     if not fileName.endswith(('.wav', '.mp3', '.aac')):
-        fileName += '.wav'
+        fileName += '.mp3'
     
     # 保存上传的文件
     file_location = f"uploads/voice/{fileName}"
@@ -323,8 +367,7 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
 
         # 生成可访问的完整URL
         # 使用新的音频文件路由
-        base_url = "http://0.0.0.0:8000"  # 开发环境
-        # base_url = "https://your-production-domain.com"  # 生产环境
+
         voice_url = f"{base_url}/uploads/voice/{fileName}"
         local_url = f"./uploads/voice/{fileName}"
         # TODO: 此处调用您自己的语音识别API
@@ -345,19 +388,35 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
         # str_result = extract_words_from_lattice2(result1)
 
         #极速版
-        new_name = convert_wav_16k(local_url)
+        new_name = convert_mp3_16k(local_url)
         voice_url = f"{base_url}/uploads/voice/{new_name}"
         APP_ID = "5f30a0b3"
         API_KEY = "d4070941076c1e019907487878384f6c"
         API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
 
-        new_local_url = fileName.replace('.wav','_16k.wav')
+        new_local_url = fileName.replace('.mp3','_16k.mp3')
         new_url = f"./uploads/voice/{new_name}"
         str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
         str_result = extract_words_from_lattice2(str_result)
+
+
+
+        #------------------------------------------------
+        #new_name = convert_mp3_16k(local_url)
+        #voice_url = f"{base_url}/uploads/voice/{new_name}"
+        # APP_ID = "5f30a0b3"
+        # API_KEY = "d4070941076c1e019907487878384f6c"
+        # API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
+        #
+        # new_local_url = fileName.replace('.mp3','_16k.mp3')
+        # #new_url = f"./uploads/voice/{new_name}"
+        # str_result = st(local_url, APP_ID, API_KEY, API_SECRET)
+        # str_result = extract_words_from_lattice2(str_result)
+        #-----------------------------------------------------
         return {"text":str_result , "voiceUrl": voice_url}
     
     except Exception as e:
+        logger.error(e)
         traceback.print_exc()
         return JSONResponse(
             status_code=500,
@@ -465,62 +524,6 @@ async def get_report(report_id: str):
         raise HTTPException(status_code=404, detail=f"Report {report_id} not found")
     
     return reports[report_id]
-#
-# @app.get("/generate-temp-audio")
-# async def generate_temp_audio(text: str = None):
-#     """
-#     生成临时语音文件
-#     实际项目中应该调用专业的语音合成API
-#     """
-#     # 生成唯一的文件名
-#     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-#     random_str = ''.join(random.choices('abcdefghijklmnopqrstuvwxyz0123456789', k=6))
-#     fileName = f"temp_audio_{timestamp}_{random_str}.wav"
-#
-#     # 确保文件名有正确的扩展名
-#     if not fileName.endswith(('.wav', '.mp3', '.aac')):
-#         fileName += '.mp3'
-#
-#     # 创建临时文件
-#     file_location = f"uploads/{fileName}"
-#     os.makedirs("uploads", exist_ok=True)
-#
-#     try:
-#         # 创建一个简单的WAV文件
-#         # 这里我们创建一个1秒的静音WAV文件作为临时文件
-#         # 实际项目中应该调用语音合成API生成真实的语音文件
-#         with open(file_location, "wb") as f:
-#             # WAV文件头
-#             f.write(b'RIFF')
-#             f.write((36).to_bytes(4, byteorder='little'))  # 文件大小
-#             f.write(b'WAVE')
-#             f.write(b'fmt ')
-#             f.write((16).to_bytes(4, byteorder='little'))  # 格式块大小
-#             f.write((1).to_bytes(2, byteorder='little'))   # 音频格式 (1 = PCM)
-#             f.write((1).to_bytes(2, byteorder='little'))   # 通道数
-#             f.write((16000).to_bytes(4, byteorder='little'))  # 采样率
-#             f.write((32000).to_bytes(4, byteorder='little'))  # 字节率
-#             f.write((2).to_bytes(2, byteorder='little'))   # 块对齐
-#             f.write((16).to_bytes(2, byteorder='little'))  # 位深度
-#             f.write(b'data')
-#             f.write((0).to_bytes(4, byteorder='little'))   # 数据块大小
-#
-#             # 生成1秒的静音数据 (16000Hz * 16bit * 1通道)
-#             for _ in range(16000):
-#                 f.write((0).to_bytes(2, byteorder='little', signed=True))
-#
-#         # 生成可访问的完整URL
-#         base_url = "http://0.0.0.0:8000"  # 开发环境
-#         # base_url = "https://your-production-domain.com"  # 生产环境
-#         voice_url = f"{base_url}/audio/{fileName}"
-#
-#         return {"voiceUrl": voice_url, "duration": "1"}
-#
-#     except Exception as e:
-#         return JSONResponse(
-#             status_code=500,
-#             content={"message": f"生成临时音频文件失败: {str(e)}"}
-#         )
 
 @app.post("/polish-text")
 async def polish_text(request: Dict[str, Any]):
@@ -597,7 +600,8 @@ async def polish_text(request: Dict[str, Any]):
     }
 
 @app.get("/get-robot-message")
-async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[str] = None):
+async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[str] = None   ,userId: str = None,
+    conversationId: str = None):
     """
     获取机器人消息
     
@@ -611,12 +615,14 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
     - duration: 语音时长（秒）
     - voiceUrl: 语音文件URL
     """
+    print('get_robot_message')
     # 确保上传目录存在
     os.makedirs("./uploads/tts", exist_ok=True)
     
     # 设置基础URL，使用单斜杠
-    base_url = "http://localhost:8000/uploads/tts/"
-    
+    base_urlr = base_url+"/uploads/tts/"
+
+
     try:
         # 解析历史消息
         history_messages = []
@@ -646,7 +652,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                 API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
                 API_KEY = 'd4070941076c1e019907487878384f6c'
                 file_name = text_to_speech(text, APP_ID, API_SECRET, API_KEY, file_path)
-
+                logger.info(file_name)
                 # 确保文件名不包含路径分隔符
                 file_name = file_name = os.path.basename(file_name)
 
@@ -654,7 +660,8 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
 
                 # 计算音频时长（秒）
                 duration = librosa.get_duration(y=y, sr=sr)
-                file_path_url = base_url+file_name
+                duration=  round(duration)
+                file_path_url = base_urlr+file_name
                 #duration = question["duration"]
                 return {
                     "text": text,
@@ -676,7 +683,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                     # 根据用户最后一条消息生成回复
                     user_content = last_message["text"].lower()
                     #messages
-                    prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，有回答不满意的地方可以直说，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以"
+                    prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以，你的话仅仅是对话内容"
                     robot_words = getds.get_response(prompt_str)
                     APP_ID = '5f30a0b3'
                     API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
@@ -689,9 +696,10 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
 
                     # 计算音频时长（秒）
                     duration = librosa.get_duration(y=y, sr=sr)
+                    duration = round(duration)
                     # 确保文件名不包含路径分隔符
                     file_name = os.path.basename(file_name)
-                    file_path_url = base_url + file_name
+                    file_path_url = base_urlr + file_name
 
                     return {
                         "text": robot_words,
@@ -705,6 +713,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                         question = random.choice(scene_questions)
                         text = question["text"]
                         duration = question["duration"]
+                        duration = round(duration)
                     else:
                         text = f"在{scene_name}场景中，我们还需要考虑哪些因素？"
                         duration = "4"
@@ -727,15 +736,16 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
         # 返回结果
         return {
             "text": text,
-            "duration": duration,
+            "duration": round(duration),
             "voiceUrl": voice_url
         }
     
     except Exception as e:
+        logger.error( traceback.format_exc())
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"获取机器人消息失败: {str(e)}")
 
 # 启动应用
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)

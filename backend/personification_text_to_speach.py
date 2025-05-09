@@ -14,7 +14,18 @@ from datetime import datetime
 from time import mktime
 import _thread as thread
 import os
-
+import  logging
+import  traceback
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 #本demo示例是单次上传文本的示例，如果用在对时效要求高的交互场景，需要流式上传文本
 # STATUS_FIRST_FRAME = 0  # 第一帧的标识
 # STATUS_CONTINUE_FRAME = 1  # 中间帧标识
@@ -210,6 +221,7 @@ def text_to_speech(text,appid,apisecret,apikey,save_folder):
         ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
         return file_name
     except Exception as e:
+        logger.error(traceback.format_exc())
         print(e)
 
 

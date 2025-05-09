@@ -20,7 +20,7 @@ from pydub import AudioSegment
 
 if __name__ == "__main__":
     #audio_path1 = r".\uploads\tts\1745893171.mp3"
-    audio_path = r'.\uploads\voice\audio_1745982238812_bvse6m_16k.wav'
+    audio_path = r'E:\work\code\test_uniapp\test_0424\backend\uploads\voice\问题0508\audio_1746676895529_4u33xs_16k.mp3'
     signal, sr = librosa.load(audio_path, sr=None)
 
 
