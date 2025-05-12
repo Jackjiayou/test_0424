@@ -167,7 +167,7 @@ questions = {
         {
             "id": 1,
             "sceneId": 1,
-            "text": "您好，我是客户李先生。听说贵公司有一些不错的产品，能简单介绍一下吗？",
+            "text": "您好，听说贵公司有一些不错的产品，能简单介绍一下吗？",
             "voiceUrl": "/static/audio/scene1-q1.mp3",
             "duration": "5"
         },
@@ -443,12 +443,16 @@ async def analyze_message(request: Dict[str, Any]):
     """
     message = request.get("message", "")
     scene_id = request.get("sceneId", 1)
-    
+    message_all = request['messages_all']
+
+    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议"
+    robot_words = getds.get_response(prompt_str)
+
     # 随机选择一个建议模板
     suggestion = random.choice(suggestion_templates)
     
     return {
-        "suggestion": suggestion,
+        "suggestion": robot_words,
         "score": random.randint(70, 95)
     }
 
@@ -703,24 +707,9 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
 
                     return {
                         "text": robot_words,
-                        "duration": duration,
+                        "duration": round(int(duration)),
                         "voiceUrl": file_path_url
                     }
-                else:
-                    # 如果最后一条是机器人消息，生成一个新的问题
-                    scene_questions = questions.get(sceneId, [])
-                    if scene_questions:
-                        question = random.choice(scene_questions)
-                        text = question["text"]
-                        duration = question["duration"]
-                        duration = round(duration)
-                    else:
-                        text = f"在{scene_name}场景中，我们还需要考虑哪些因素？"
-                        duration = "4"
-            else:
-                # 如果没有历史消息，生成一个默认问题
-                text = f"在{scene_name}场景中，您认为最重要的是什么？"
-                duration = "4"
         
         # 模拟语音合成
         # 在实际应用中，这里应该调用语音合成API
@@ -736,7 +725,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
         # 返回结果
         return {
             "text": text,
-            "duration": round(duration),
+            "duration": round(int(duration)),
             "voiceUrl": voice_url
         }
     
