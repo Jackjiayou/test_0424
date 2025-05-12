@@ -46,7 +46,16 @@
 							<!-- 改进建议（仅用户消息显示） -->
 							<view v-if="msg.from === 'user'" class="suggestion-wrapper">
 								<view class="suggestion-btn" @click="toggleSuggestion(index)">
-									<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
+									<template v-if="msg.suggestionLoading">
+										<text>正在生成改进建议</text>
+										<text class="loading-dot">...</text>
+									</template>
+									<template v-else-if="msg.suggestionError">
+										<text>改进建议生成失败</text>
+									</template>
+									<template v-else>
+										<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
+									</template>
 								</view>
 								<view  class="suggestion-content" v-if="msg.showSuggestion">
 									<view class="suggestion-title">表达建议</view>
@@ -488,7 +497,9 @@
 									suggestion: '',
 									polishedText: '',
 									showSuggestion: false,
-									isPlaying: false
+									isPlaying: false,
+									suggestionLoading: true,
+									suggestionError: false
 								};
 								this.messages.push(userMessage);
 								// 预下载用户语音
@@ -525,26 +536,34 @@
 			},
 			// 获取消息改进建议
 			getMessageSuggestion(text, messageIndex) {
+				const realMessages = this.messages.filter(msg => !(msg.from === 'robot' && msg.isLoading));
+				this.$set(this.messages[messageIndex], 'suggestionLoading', true);
+				this.$set(this.messages[messageIndex], 'suggestionError', false);
 				uni.request({
 					url: `${this.apiBaseUrl}/analyze`,
 					method: 'POST',
 					data: {
+						messages_all: JSON.stringify(realMessages.map(msg => ({
+							from: msg.from,
+							text: msg.text
+						}))),
 						sceneId: this.sceneId,
 						message: text,
 						allMessages: this.formatMessagesForAnalysis()
 					},
 					success: (res) => {
 						if (res.data && res.data.suggestion) {
-							console.log('获取建议成功:', res.data);
-							// 更新消息对象的建议内容
 							this.$set(this.messages[messageIndex], 'suggestion', res.data.suggestion);
-							
-							// 同时获取润色表达
-							this.getPolishedText(text, messageIndex);
+							this.$set(this.messages[messageIndex], 'suggestionLoading', false);
+							this.$set(this.messages[messageIndex], 'suggestionError', false);
+						} else {
+							this.$set(this.messages[messageIndex], 'suggestionLoading', false);
+							this.$set(this.messages[messageIndex], 'suggestionError', true);
 						}
 					},
 					fail: (err) => {
-						console.error('获取建议失败:', err);
+						this.$set(this.messages[messageIndex], 'suggestionLoading', false);
+						this.$set(this.messages[messageIndex], 'suggestionError', true);
 					}
 				});
 			},
@@ -1296,6 +1315,17 @@
 	
 	@keyframes loading-bar-blink {
 		0% { opacity: 0.7; }
+		100% { opacity: 1; }
+	}
+	
+	.loading-dot {
+		display: inline-block;
+		margin-left: 6rpx;
+		animation: blink 1s infinite alternate;
+	}
+	
+	@keyframes blink {
+		0% { opacity: 0.3; }
 		100% { opacity: 1; }
 	}
 </style> 
