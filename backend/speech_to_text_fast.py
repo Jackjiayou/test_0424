@@ -217,6 +217,9 @@ def speech_to_text(audio_file, app_id, api_key, api_secret):
         FileNotFoundError: 音频文件不存在
         Exception: 识别过程中发生错误
     """
+    app_id='945b4712'
+    api_key='ea534a9e6e9cd16ca30764ccf18901e9'
+    api_secret='ZWI2YzcyODhiZTQwNzQ4YjkxNjQzZTgx'
     stt = SpeechToText(app_id, api_key, api_secret)
     return stt.recognize(audio_file)
 
@@ -226,7 +229,7 @@ if __name__ == "__main__":
     API_KEY = "d4070941076c1e019907487878384f6c"
     API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
     local_url = r".\uploads\tts\1745980823.mp3"
-    local_url = r'E:\work\code\test_uniapp\test_0424\backend\uploads\voice\问题0508\audio_1746676895529_4u33xs_16k.mp3'
+    local_url = r'C:\Users\yongs\Desktop\fsdownload\audio_1746774028495_kb9xn7.mp3'
 
     #audio_1745982238812_bvse6m_16k  audio_1745981871245_gq2j8n_16k
     try:
