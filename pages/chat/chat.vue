@@ -97,12 +97,15 @@
 		
 		<!-- 结束确认对话框 -->
 		<view class="dialog-mask" v-if="showEndDialog">
-			<view class="dialog-container">
-				<view class="dialog-title">是否确认结束这次练习？</view>
-				<view class="dialog-buttons">
-					<button class="dialog-btn cancel" @click="closeEndDialog">取消</button>
-					<button class="dialog-btn confirm" @click="endOnly">结束对话</button>
-					<button class="dialog-btn report" @click="endAndViewReport">查看报告</button>
+			<view class="dialog-container new-dialog">
+				<view class="dialog-close" @click="closeEndDialog">×</view>
+				<view class="dialog-icon">
+					<image src="/static/dialog-bubble.png" mode="aspectFit" />
+				</view>
+				<view class="dialog-title new-dialog-title">你确定要结束这次练习吗？</view>
+				<view class="dialog-buttons new-dialog-buttons">
+					<button class="dialog-btn dialog-btn-primary" @click="endAndViewReport">结束对话，并查看测评报告</button>
+					<button class="dialog-btn dialog-btn-outline" @click="endOnly">结束对话</button>
 				</view>
 			</view>
 		</view>
@@ -125,8 +128,8 @@
 				username: '', // 用户名
 				conversationId: '', // 对话ID
 				// API地址配置
-				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
-                //apiBaseUrl: 'http://182.92.109.197',
+				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
+                apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
 				showRecordingOverlay: false, // 是否显示录音提示浮层
 				recordingTipText: '准备录音...', // 录音提示文本
@@ -842,8 +845,7 @@
 			endAndViewReport() {
 				// 发送所有对话记录到后端生成报告
 				this.generateReport();
-				
-				// 跳转到报告页面
+				// 跳转到新版报告页面
 				uni.navigateTo({
 					url: `/pages/report/report?sceneId=${this.sceneId}`
 				});
@@ -918,8 +920,8 @@
 	
 	.end-btn {
 		font-size: 28rpx;
-		background-color: #f2f2f2;
-		color: #333;
+		background-color: #10b981;
+		color: #fff;
 		padding: 10rpx 30rpx;
 		border-radius: 30rpx;
 		line-height: 1.5;
@@ -1221,12 +1223,13 @@
 	}
 	
 	.confirm {
-		color: #007AFF;
+		color: #fff;
+		background-color: #10b981;
 	}
 	
 	.report {
 		color: #fff;
-		background-color: #007AFF;
+		background-color: #10b981;
 	}
 	
 	/* 录音提示浮层 */
@@ -1274,7 +1277,7 @@
 	
 	.recording-animation {
 		background-color: #ff4d4f;
-		animation: pulse 1.5s infinite;
+		animation: pulse 1.5s infinite alternate;
 	}
 	
 	@keyframes pulse {
@@ -1327,5 +1330,81 @@
 	@keyframes blink {
 		0% { opacity: 0.3; }
 		100% { opacity: 1; }
+	}
+	
+	.new-dialog {
+		border-radius: 24rpx;
+		box-shadow: 0 8rpx 32rpx rgba(16,185,129,0.10);
+		position: relative;
+		padding-bottom: 40rpx;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	
+	.dialog-close {
+		position: absolute;
+		top: 24rpx;
+		right: 24rpx;
+		width: 48rpx;
+		height: 48rpx;
+		border-radius: 50%;
+		background: #f2f2f2;
+		color: #666;
+		font-size: 36rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
+	}
+	
+	.dialog-icon {
+		margin-top: 48rpx;
+		margin-bottom: 24rpx;
+	}
+	
+	.dialog-icon image {
+		width: 80rpx;
+		height: 80rpx;
+	}
+	
+	.new-dialog-title {
+		font-size: 32rpx;
+		color: #222;
+		text-align: center;
+		margin-bottom: 48rpx;
+		font-weight: bold;
+	}
+	
+	.new-dialog-buttons {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 24rpx;
+		align-items: center;
+	}
+	
+	.dialog-btn-primary {
+		width: 80%;
+		height: 88rpx;
+		border-radius: 44rpx;
+		font-size: 30rpx;
+		font-weight: 500;
+		background: #10b981;
+		color: #fff;
+		border: none;
+		margin: 0 auto;
+	}
+	
+	.dialog-btn-outline {
+		width: 80%;
+		height: 88rpx;
+		border-radius: 44rpx;
+		font-size: 30rpx;
+		font-weight: 500;
+		background: #fff;
+		color: #10b981;
+		border: 2rpx solid #10b981;
+		margin: 0 auto;
 	}
 </style> 

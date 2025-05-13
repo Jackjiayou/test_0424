@@ -238,7 +238,7 @@
 	}
 	
 	.report-header {
-		background-color: #007AFF;
+		background-color: #10b981;
 		color: #fff;
 		padding: 40rpx 30rpx;
 		border-radius: 12rpx 12rpx 0 0;
@@ -276,7 +276,7 @@
 	.score-value {
 		font-size: 80rpx;
 		font-weight: bold;
-		color: #007AFF;
+		color: #10b981;
 	}
 	
 	.score-label {
@@ -328,7 +328,7 @@
 	
 	.dimension-bar {
 		height: 100%;
-		background-color: #007AFF;
+		background-color: #10b981;
 		border-radius: 20rpx;
 		display: flex;
 		align-items: center;
@@ -352,7 +352,7 @@
 		font-size: 32rpx;
 		font-weight: bold;
 		margin-bottom: 20rpx;
-		border-left: 6rpx solid #007AFF;
+		border-left: 6rpx solid #10b981;
 		padding-left: 15rpx;
 	}
 	
@@ -383,7 +383,7 @@
 	
 	.analysis-score {
 		font-size: 30rpx;
-		color: #007AFF;
+		color: #10b981;
 		font-weight: bold;
 	}
 	
@@ -405,7 +405,7 @@
 	.suggestion-icon {
 		width: 50rpx;
 		height: 50rpx;
-		background-color: #007AFF;
+		background-color: #10b981;
 		color: #fff;
 		border-radius: 25rpx;
 		display: flex;
@@ -439,7 +439,7 @@
 	}
 	
 	.share-btn {
-		background-color: #007AFF;
+		background-color: #10b981;
 		color: #fff;
 	}
 	

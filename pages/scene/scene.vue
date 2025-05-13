@@ -41,7 +41,7 @@
 	export default {
 		data() {
 			return {
-                apiBaseUrl: 'http://182.92.109.197/uploads/',
+                apiBaseUrl: 'http://182.92.109.197/uploads/static',
 				sceneId: 0,
 				scene: {
 					id: 0,
@@ -215,7 +215,7 @@
 	}
 	
 	.start-btn {
-		background-color: #007AFF;
+		background-color: #10b981;
 		color: #fff;
 	}
 	
