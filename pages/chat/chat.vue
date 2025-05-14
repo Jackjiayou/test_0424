@@ -76,11 +76,11 @@
 		<view class="input-area">
 			<button 
 				class="voice-btn" 
-				:class="{ 'recording': isRecording }"
-				@touchstart="startRecording" 
-				@touchend="stopRecording"
-				@touchcancel="cancelRecording">
-				{{ isRecording ? '松开发送' : '按住说话' }}
+				:class="{ 'recording': isRecording, 'disabled': isRobotLoading }"
+				@touchstart="handleTouchStart" 
+				@touchend="handleTouchEnd"
+				@touchcancel="handleTouchCancel">
+				{{ isRecording ? '松开发送' : (isRobotLoading ? '顾客正在输入...' : '按住说话') }}
 			</button>
 		</view>
 		
@@ -127,6 +127,8 @@
 				userId: '', // 用户ID
 				username: '', // 用户名
 				conversationId: '', // 对话ID
+				// 新增: 机器人消息加载标志
+				isRobotLoading: false,
 				// API地址配置
 				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
                 apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
@@ -283,6 +285,9 @@
 			// 获取机器人消息
 			async getRobotMessage() {
 				try {
+					// 设置机器人消息加载标志为true
+					this.isRobotLoading = true;
+					
 					const realMessages = this.messages.filter(msg => !(msg.from === 'robot' && msg.isLoading));
 					const response = await uni.request({
 						url: this.apiBaseUrl +'/get-robot-message',
@@ -321,6 +326,8 @@
 						}
 						this.$nextTick(() => {
 							this.scrollToBottom();
+							// 设置机器人消息加载标志为false
+							this.isRobotLoading = false;
 						});
 					} else {
 						// 获取失败时移除假语音条
@@ -331,6 +338,8 @@
 							title: '获取消息失败',
 							icon: 'none'
 						});
+						// 设置机器人消息加载标志为false
+						this.isRobotLoading = false;
 					}
 				} catch (error) {
 					// 获取失败时移除假语音条
@@ -341,6 +350,8 @@
 						title: '获取消息失败',
 						icon: 'none'
 					});
+					// 设置机器人消息加载标志为false
+					this.isRobotLoading = false;
 				}
 			},
 			// 初始化录音管理器
@@ -425,6 +436,26 @@
 						});
 					}
 				});
+			},
+			// 处理按钮触摸开始事件
+			handleTouchStart() {
+				if (!this.isRobotLoading) {
+					this.startRecording();
+				}
+			},
+			
+			// 处理按钮触摸结束事件
+			handleTouchEnd() {
+				if (this.isRecording) {
+					this.stopRecording();
+				}
+			},
+			
+			// 处理按钮触摸取消事件
+			handleTouchCancel() {
+				if (this.isRecording) {
+					this.cancelRecording();
+				}
 			},
 			// 结束录音
 			stopRecording() {
@@ -522,6 +553,7 @@
 									isLoading: true,
 									timestamp: new Date().toISOString()
 								});
+								this.isRobotLoading = true;  // 设置机器人加载标志
 								setTimeout(() => { this.getRobotMessage(); }, 1500);
 							} else {
 								uni.showToast({ title: '语音识别失败', icon: 'none' });
@@ -1173,6 +1205,13 @@
 	
 	.recording {
 		background-color: #e0e0e0;
+	}
+	
+	/* 添加禁用状态样式 */
+	.voice-btn.disabled {
+		background-color: #d9d9d9;
+		color: #999;
+		pointer-events: none;
 	}
 	
 	.dialog-mask {
