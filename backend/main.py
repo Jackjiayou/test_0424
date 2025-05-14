@@ -30,8 +30,8 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-base_url = "http://localhost:8000"  # 开发环境
-#base_url = "http://182.92.109.197"  # 生产环境
+#base_url = "http://localhost:8000"  # 开发环境
+base_url = "https://ai.dl-dd.com"  # 生产环境
 logger = logging.getLogger(__name__)
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
@@ -387,36 +387,34 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
         # # data = json.loads(result1['lattice'][0]['json_1best'])
         # str_result = extract_words_from_lattice2(result1)
 
-        #极速版
-        new_name = convert_mp3_16k(local_url)
-        voice_url = f"{base_url}/uploads/voice/{new_name}"
+
         APP_ID = "5f30a0b3"
         API_KEY = "d4070941076c1e019907487878384f6c"
         API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
-
-        new_local_url = fileName.replace('.mp3','_16k.mp3')
-        new_url = f"./uploads/voice/{new_name}"
-        str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
-        str_result = extract_words_from_lattice2(str_result)
-
+        #极速版
+        #-----------------------------------------------------
+        # new_name = convert_mp3_16k(local_url)
+        # voice_url = f"{base_url}/uploads/voice/{new_name}"
+        #
+        # new_local_url = fileName.replace('.mp3','_16k.mp3')
+        # new_url = f"./uploads/voice/{new_name}"
+        # str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
+        # str_result = extract_words_from_lattice2(str_result)
+        #--------------------------------
 
 
         #------------------------------------------------
-        #new_name = convert_mp3_16k(local_url)
-        #voice_url = f"{base_url}/uploads/voice/{new_name}"
-        # APP_ID = "5f30a0b3"
-        # API_KEY = "d4070941076c1e019907487878384f6c"
-        # API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
+
+
         #
-        # new_local_url = fileName.replace('.mp3','_16k.mp3')
-        # #new_url = f"./uploads/voice/{new_name}"
-        # str_result = st(local_url, APP_ID, API_KEY, API_SECRET)
-        # str_result = extract_words_from_lattice2(str_result)
+        #
+        str_result = st(local_url, APP_ID, API_KEY, API_SECRET)
+        str_result = extract_words_from_lattice2(str_result)
         #-----------------------------------------------------
         return {"text":str_result , "voiceUrl": voice_url}
     
     except Exception as e:
-        logger.error(e)
+        logger.error(traceback.format_exc())
         traceback.print_exc()
         return JSONResponse(
             status_code=500,
@@ -445,7 +443,7 @@ async def analyze_message(request: Dict[str, Any]):
     scene_id = request.get("sceneId", 1)
     message_all = request['messages_all']
 
-    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议"
+    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
     robot_words = getds.get_response(prompt_str)
 
     # 随机选择一个建议模板
