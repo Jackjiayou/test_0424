@@ -11,9 +11,9 @@
 			<view v-for="(msg, index) in messages" :key="index" :id="'msg-' + (index + 1)" class="message-item" :class="{ 'robot': msg.from === 'robot', 'user': msg.from === 'user' }">
 				<view class="message-avatar">
 					<!--<image :src="msg.from === 'robot' ? '/static/robot-avatar.png' : '/static/user-avatar.png'"></image> -->
-                    <image :src="msg.from === 'robot' ? 'http://182.92.109.197/uploads/static/robot-avatar.png' : 'http://182.92.109.197/uploads/static/user-avatar.png'"></image>
+                    <image :src="msg.from === 'robot' ? 'https://ai.dl-dd.com/uploads/static/robot-avatar.png' : 'https://ai.dl-dd.com/uploads/static/user-avatar.png'"></image>
 				</view>
-				<view class="message-content">
+				<view class="message-content">  
 					<!-- 语音消息部分 -->
 					<view class="voice-message-container">
 						<!-- 只渲染假语音条动画 -->
@@ -62,8 +62,8 @@
 									<text class="suggestion-text">{{msg.suggestion}}</text>
 									
 									<!-- 润色表达部分 -->
-									<view class="suggestion-title" style="margin-top: 20rpx;">润色表达</view>
-									<text class="suggestion-text">{{msg.polishedText || '正在生成润色表达...'}}</text>
+									<!-- <view class="suggestion-title" style="margin-top: 20rpx;">润色表达</view>
+									<text class="suggestion-text">{{msg.polishedText || '正在生成润色表达...'}}</text>-->
 								</view>
 							</view>
 						</view>
@@ -121,15 +121,16 @@
 				messages: [],
 				isRecording: false,
 				showEndDialog: false,
-				recorderManager: null, // 录音管理器
+				recorderManager: null, // 录 音管理器
 				currentVoicePath: '', // 当前录音文件路径
 				// 用户信息
 				userId: '', // 用户ID
 				username: '', // 用户名
 				conversationId: '', // 对话ID
 				// API地址配置
-				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
-                apiBaseUrl: 'http://182.92.109.197',
+				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
+                apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
+                //apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
 				showRecordingOverlay: false, // 是否显示录音提示浮层
 				recordingTipText: '准备录音...', // 录音提示文本
@@ -145,35 +146,35 @@
 				questionBank: {
 					1: [ // 新客户开发
 						{
-							text: "您好，我是客户李先生。听说贵公司有一些不错的产品，能简单介绍一下吗？",
-							voiceUrl: "/static/audio/scene1-q1.mp3",
+							text: "您好，我是客户李先生111。听说贵公司有一些不错的产品，能简单介绍一下吗？",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene1-q1.mp3",
 							duration: "5"
 						},
 						{
 							text: "我还不太了解你们公司的背景，能告诉我你们公司的情况吗？",
-							voiceUrl: "/static/audio/scene1-q2.mp3",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene1-q2.mp3",
 							duration: "4"
 						},
 						{
 							text: "市场上类似的产品很多，贵公司的产品有什么特别之处吗？",
-							voiceUrl: "/static/audio/scene1-q3.mp3",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene1-q3.mp3",
 							duration: "5"
 						}
 					],
 					2: [ // 异议处理
 						{
 							text: "这个价格对我来说有点高，能便宜一些吗？",
-							voiceUrl: "/static/audio/scene2-q1.mp3",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene2-q1.mp3",
 							duration: "3"
 						},
 						{
 							text: "我以前用过类似的产品，但效果不太理想，为什么我要选择你们的呢？",
-							voiceUrl: "/static/audio/scene2-q2.mp3",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene2-q2.mp3",
 							duration: "6"
 						},
 						{
 							text: "我需要考虑一下，可以过几天再联系你吗？",
-							voiceUrl: "/static/audio/scene2-q3.mp3",
+							voiceUrl: this.apiBaseUrl+"/static/audio/scene2-q3.mp3",
 							duration: "4"
 						}
 					],

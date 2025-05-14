@@ -41,7 +41,7 @@
 	export default {
 		data() {
 			return {
-                apiBaseUrl: 'http://182.92.109.197/uploads/static',
+                apiBaseUrl: 'https://ai.dl-dd.com/uploads',
 				sceneId: 0,
 				scene: {
 					id: 0,

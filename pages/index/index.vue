@@ -57,7 +57,7 @@
 		data() {
 			return {
 				userInfo: {
-					avatar: 'http://182.92.109.197/uploads/static/user-avatar.png',
+					avatar:  'https://ai.dl-dd.com/uploads/static/user-avatar.png',
 					name: '张经理',
 				},
 				scenes: [
@@ -65,25 +65,25 @@
 						id: 1,
 						name: '新客户开发',
 						description: '针对首次接触的潜在客户，学习如何有效地介绍产品和建立信任',
-						icon: 'http://182.92.109.197/uploads/static/scene1.png'
+						icon:  'https://ai.dl-dd.com/uploads/static/scene1.png'
 					},
 					{
 						id: 2,
 						name: '异议处理',
 						description: '学习如何面对客户提出的各种异议，并有效地进行回应',
-						icon: 'http://182.92.109.197/uploads/static/scene2.png'
+						icon:  'https://ai.dl-dd.com/uploads/static/scene2.png'
 					},
 					{
 						id: 3,
 						name: '产品推荐',
 						description: '根据客户需求，推荐最合适的产品，提高销售成功率',
-						icon: 'http://182.92.109.197/uploads/static/scene3.png'
+						icon:  'https://ai.dl-dd.com/uploads/static/scene3.png'
 					},
 					{
 						id: 4,
 						name: '成交技巧',
 						description: '学习如何引导客户做出购买决定，顺利完成销售',
-						icon: 'http://182.92.109.197/uploads/static/scene4.png'
+						icon:  'https://ai.dl-dd.com/uploads/static/scene4.png'
 					}
 				]
 			}

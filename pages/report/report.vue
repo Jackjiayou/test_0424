@@ -15,10 +15,8 @@
 				
 				<!-- 五维度评分雷达图 -->
 				<view class="radar-chart">
-					<image class="radar-image" src="/static/radar-chart.png"></image>
-					<!-- 实际项目中应该使用echarts等图表库绘制 -->
-					<!-- 或者可以使用canvas自行绘制 -->
-				</view>
+					<canvas canvas-id="radarChart" id="radarChart" class="radar-canvas"></canvas>
+				</view> 
 				
 				<!-- 各项评分 -->
 				<view class="dimension-scores">
@@ -73,9 +71,12 @@
 </template>
 
 <script>
+	import uCharts from '@/uni_modules/qiun-data-charts/js_sdk/u-charts/u-charts.js';
+	
 	export default {
 		data() {
 			return {
+				radarSize: 300, // 默认
 				sceneId: 0,
 				sceneName: '',
 				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
@@ -131,7 +132,55 @@
 				this.getReportData();
 			}
 		},
+		onReady() {
+			const sysInfo = uni.getSystemInfoSync();
+			this.radarSize = Math.floor(sysInfo.windowWidth * 0.9);
+			this.initRadarChart();
+		},
 		methods: {
+			initRadarChart() {
+				const ctx = uni.createCanvasContext('radarChart', this);
+				const size = this.radarSize || 300;
+				const radarChart = new uCharts({
+					type: 'radar',
+					context: ctx,
+					width: size,
+					height: size,
+					categories: this.report.dimensions.map(item => item.name),
+					series: [{
+						name: '评分',
+						data: this.report.dimensions.map(item => item.score)
+					}],
+					animation: true,
+					background: '#FFFFFF',
+					padding: [size * 0.13, size * 0.13, size * 0.13, size * 0.13], // 13% padding，减小让图更居中
+					legend: {
+						show: false
+					},
+					radar: {
+						gridType: 'radar',
+						gridColor: '#ddd',
+						gridCount: 4,
+						labelColor: '#333',
+						labelFontSize: Math.floor(size * 0.055), // 稍大
+						splitArea: {
+							show: true,
+							areaStyle: {
+								color: ['rgba(16,185,129,0.1)', 'rgba(16,185,129,0.2)', 'rgba(16,185,129,0.3)', 'rgba(16,185,129,0.4)']
+							}
+						},
+						dataLabel: true,
+						dataLabelColor: '#10b981',
+						dataLabelFontSize: Math.floor(size * 0.045) // 稍大
+					},
+					extra: {
+						radar: {
+							linearType: 'custom',
+							labelShow: true
+						}
+					}
+				});
+			},
 			getReportData() {
 				// 获取场景名称
 				const sceneNames = {
@@ -197,6 +246,7 @@
 								};
 								
 								this.report = formattedReport;
+								this.initRadarChart();
 							}
 						},
 						fail: (err) => {
@@ -286,17 +336,19 @@
 	}
 	
 	.radar-chart {
-		width: 100%;
-		height: 500rpx;
-		margin-bottom: 30rpx;
+		width: 90vw;
+		height: 90vw;
+		max-width: 700px;
+		max-height: 700px;
+		margin: 0 auto 30rpx auto;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 	
-	.radar-image {
-		width: 90%;
-		height: 90%;
+	.radar-canvas {
+		width: 100%;
+		height: 100%;
 	}
 	
 	.dimension-scores {
@@ -368,7 +420,7 @@
 		padding-bottom: 0;
 	}
 	
-	.analysis-header {
+	.analysis-header { 
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
