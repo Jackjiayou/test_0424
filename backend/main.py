@@ -20,6 +20,9 @@ from pydub import AudioSegment
 from pydub.utils import which
 import os
 import logging
+import requests
+import time
+import os
 
 # 配置日志
 logging.basicConfig(
@@ -30,9 +33,10 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-#base_url = "http://localhost:8000"  # 开发环境
-base_url = "https://ai.dl-dd.com"  # 生产环境
 logger = logging.getLogger(__name__)
+base_url = "http://localhost:8000"  # 开发环境
+#base_url = "https://ai.dl-dd.com"  # 生产环境
+
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
 API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
@@ -60,7 +64,6 @@ os.makedirs(os.path.join(UPLOAD_DIR, "voice"), exist_ok=True)
 app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".")), name="static")
 # 挂载上传目录，用于访问语音文件
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
 
 #
 # # 确保上传目录存在
@@ -393,23 +396,20 @@ async def speech_to_text(audio_file: UploadFile = File(...), sceneId: int = Form
         API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
         #极速版
         #-----------------------------------------------------
-        # new_name = convert_mp3_16k(local_url)
-        # voice_url = f"{base_url}/uploads/voice/{new_name}"
-        #
-        # new_local_url = fileName.replace('.mp3','_16k.mp3')
-        # new_url = f"./uploads/voice/{new_name}"
-        # str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
-        # str_result = extract_words_from_lattice2(str_result)
+        new_name = convert_mp3_16k(local_url)
+        voice_url = f"{base_url}/uploads/voice/{new_name}"
+
+        new_local_url = fileName.replace('.mp3','_16k.mp3')
+        new_url = f"./uploads/voice/{new_name}"
+        str_result = st(new_url, APP_ID, API_KEY, API_SECRET)
+        str_result = extract_words_from_lattice2(str_result)
         #--------------------------------
 
 
         #------------------------------------------------
-
-
         #
-        #
-        str_result = st(local_url, APP_ID, API_KEY, API_SECRET)
-        str_result = extract_words_from_lattice2(str_result)
+        # str_result = st(local_url, APP_ID, API_KEY, API_SECRET)
+        # str_result = extract_words_from_lattice2(str_result)
         #-----------------------------------------------------
         return {"text":str_result , "voiceUrl": voice_url}
     
@@ -439,16 +439,17 @@ async def analyze_message(request: Dict[str, Any]):
     分析用户消息并生成改进建议
     这里使用模拟数据，实际项目中应该调用大模型API
     """
+    print("analyze_message start")
     message = request.get("message", "")
     scene_id = request.get("sceneId", 1)
     message_all = request['messages_all']
 
-    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
+    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
     robot_words = getds.get_response(prompt_str)
 
     # 随机选择一个建议模板
     suggestion = random.choice(suggestion_templates)
-    
+    print("analyze_message end")
     return {
         "suggestion": robot_words,
         "score": random.randint(70, 95)
@@ -602,8 +603,7 @@ async def polish_text(request: Dict[str, Any]):
     }
 
 @app.get("/get-robot-message")
-async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[str] = None   ,userId: str = None,
-    conversationId: str = None):
+async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[str] = None, userId: str = None, conversationId: str = None):
     """
     获取机器人消息
     
@@ -618,6 +618,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
     - voiceUrl: 语音文件URL
     """
     print('get_robot_message')
+    print("get_robot_message start")
     # 确保上传目录存在
     os.makedirs("./uploads/tts", exist_ok=True)
     
@@ -685,7 +686,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                     # 根据用户最后一条消息生成回复
                     user_content = last_message["text"].lower()
                     #messages
-                    prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是robot，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以，你的话仅仅是对话内容"
+                    prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以，你的话仅仅是对话内容"
                     robot_words = getds.get_response(prompt_str)
                     APP_ID = '5f30a0b3'
                     API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
@@ -719,7 +720,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
         else:
             # 默认语音URL
             voice_url = f"https://example.com/audio/default.wav"
-        
+        print("get_robot_message end")
         # 返回结果
         return {
             "text": text,
@@ -731,6 +732,154 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
         logger.error( traceback.format_exc())
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"获取机器人消息失败: {str(e)}")
+
+@app.post("/digital-human-speech-to-text")
+async def digital_human_speech_to_text(audio_file: UploadFile = File(...), userId: str = Form(...), conversationId: str = Form(...)):
+    """
+    珍迪助手页面的语音转文字接口
+    复用 /speech-to-text 的逻辑，但返回格式更简单
+    """
+    try:
+        # 复用 /speech-to-text 的逻辑
+        result = await speech_to_text(audio_file, None, None, userId, conversationId)
+        return result
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return JSONResponse(status_code=500, content={"message": f"语音转文字失败: {str(e)}"})
+
+@app.get("/digital-human-robot-message")
+async def digital_human_robot_message(sceneId: int, messageCount: int, messages: Optional[str] = None, userId: str = None, conversationId: str = None):
+    """
+    珍迪助手页面的机器人回复接口
+    复用 /get-robot-message 的逻辑，但返回格式更简单
+    """
+    try:
+        # 复用 /get-robot-message 的逻辑
+        result = await get_robot_message(sceneId, messageCount, messages, userId, conversationId)
+        return result
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return JSONResponse(status_code=500, content={"message": f"获取机器人回复失败: {str(e)}"})
+
+
+def process_video(video_path, audio_path, api_url="http://117.50.91.160:8000"):
+    """
+    处理视频和音频文件
+
+    参数:
+        video_path: 视频文件路径（MP4格式）
+        audio_path: 音频文件路径（WAV格式）
+        api_url: API服务器地址
+    """
+    # 1. 上传文件并获取任务ID
+    files = {
+        'video_file': ('input.mp4', open(video_path, 'rb'), 'video/mp4'),
+        'audio_file': ('input.wav', open(audio_path, 'rb'), 'audio/wav')
+    }
+
+    print("开始上传文件...")
+    response = requests.post(f"{api_url}/process/", files=files)
+    if response.status_code != 200:
+        print(f"上传失败: {response.text}")
+        return
+
+    task_id = response.json()['task_id']
+    print(f"文件上传成功，任务ID: {task_id}")
+
+    # 2. 循环检查处理状态
+    while True:
+        status_response = requests.get(f"{api_url}/status/{task_id}")
+        status = status_response.json()
+        print(f"当前状态: {status['status']}")
+
+        if status['status'] == 'completed':
+            # 3. 下载处理完成的视频
+            print("处理完成，开始下载结果...")
+            result_response = requests.get(f"{api_url}/result/{task_id}")
+
+            if result_response.status_code == 200:
+                output_filename = f"output_{task_id}_input.mp4"
+                output_path = f"./uploads/download/output_{output_filename}"
+                with open(output_path, 'wb') as f:
+                    f.write(result_response.content)
+                print(f"下载完成，保存到: {output_path}")
+                return output_path
+            else:
+                print(f"下载失败: {result_response.text}")
+                raise HTTPException(status_code=500, detail=f"获取机器人消息失败: {str(result_response.text)}")
+            break
+
+        elif status['status'] == 'failed':
+            print(f"处理失败: {status.get('error', '未知错误')}")
+            raise HTTPException(status_code=500, detail=f"获取机器人消息失败")
+            break
+
+        time.sleep(5)  # 每5秒检查一次状态
+
+@app.post("/synthesize")
+async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
+    """
+    调用gpu_app合成视频
+    
+    参数:
+        text: 用户输入的文本
+        messages: 历史聊天记录（JSON字符串）
+    """
+    try:
+        # 解析历史消息
+        history_messages = []
+        if messages:
+            try:
+                history_messages = json.loads(messages)
+            except:
+                pass
+
+        # 根据历史聊天信息调用大模型生成机器人下一条对话
+        prompt_str = messages + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是bot，请明确区分你我的对话，不要把你的话当成我说的，你是一名懂健康养生的助手，我是顾客的角色，帮生成自然、对话式的回答,仅生成"
+        chat_msg = getds.get_messages(history_messages)
+        robot_words = getds.get_response_new(chat_msg)
+
+        base_urlr = base_url + "/uploads/tts/"
+        audio_path = ''
+        APP_ID = '5f30a0b3'
+        API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
+        API_KEY = 'd4070941076c1e019907487878384f6c'
+
+        file_path = './uploads/tts/'
+        file_name = text_to_speech(robot_words, APP_ID, API_SECRET, API_KEY, file_path)
+
+        # # 使用librosa加载音频文件
+        # y, sr = librosa.load(file_path + file_name, sr=None)
+        #
+        # # 计算音频时长（秒）
+        # duration = librosa.get_duration(y=y, sr=sr)
+        #duration = round(duration)
+        # 确保文件名不包含路径分隔符
+        file_name = os.path.basename(file_name)
+        file_path_url = base_urlr + file_name
+        local_audio_path = file_path + file_name
+
+        # 定义一个字符串数组
+        my_list = ["tp1.mp4", "tp2.mp4", "tp3.mp4"]
+
+        # 随机提取一个元素
+        random_item = random.choice(my_list)
+
+        video_path =f'./uploads/download/{random_item}'
+        aa = datetime.now()
+        video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
+        bb =datetime.now()
+
+        print('时间：'+str(bb-aa))
+        filename = os.path.basename(video_path_combine)
+        url_vedio = base_url+'/uploads/download/'+filename
+        #video_url = r'http://localhost:8000\uploads\download\hr_5s.mp4'#虚拟获取视频的方法后期加上
+        return {"videoUrl": url_vedio,
+                "text": robot_words
+                }
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return JSONResponse(status_code=500, content={"message": f"视频合成失败: {str(e)}"})
 
 # 启动应用
 if __name__ == "__main__":
