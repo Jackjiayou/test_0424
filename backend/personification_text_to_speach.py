@@ -139,7 +139,7 @@ def assemble_ws_auth_url(requset_url, method="GET", api_key="", api_secret=""):
 def on_message(ws, message):
     try:
 
-        print(message)
+        #print(message)
         # data = json.dumps(message)
         message = json.loads(message)
         # print(message)
@@ -150,7 +150,7 @@ def on_message(ws, message):
             audio = message["payload"]["audio"]['audio']
             audio = base64.b64decode(audio)
             status = message["payload"]['audio']["status"]
-            print(message)
+            #print(message)
             if status == 2:
                 print("ws is closed")
                 ws.close()
