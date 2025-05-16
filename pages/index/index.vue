@@ -27,15 +27,19 @@
 				</view>
 			</view>
 		</view>
-		<!-- 功能入口卡片 -- >   
+		<!-- 功能入口卡片 -->   
 		<view class="card func-card"> 
 			<view class="func-item" @click="goToRanking"> 
-				<image class="func-icon" src="http://182.92.109.197/uploads/static/rank.png"></image>
+				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/rank.png'"></image>
 				<text class="func-label">排行榜</text>
 			</view>
 			<view class="func-item" @click="goToRecords">
-				<image class="func-icon" src="http://182.92.109.197/uploads/static/record.png"></image>
+				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/record.png'"></image>
 				<text class="func-label">练习记录</text>
+			</view>
+			<view class="func-item" @click="goToDigitalHuman">
+				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/digital-human.png'"></image>
+				<text class="func-label">珍迪助手</text>
 			</view>
 		</view>
 		<!-- 练习场景卡片 -->
@@ -56,8 +60,10 @@
 	export default {
 		data() {
 			return {
+                apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
+                //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
 				userInfo: {
-					avatar:  'https://ai.dl-dd.com/uploads/static/user-avatar.png',
+					avatar: '',
 					name: '张经理',
 				},
 				scenes: [
@@ -65,30 +71,37 @@
 						id: 1,
 						name: '新客户开发',
 						description: '针对首次接触的潜在客户，学习如何有效地介绍产品和建立信任',
-						icon:  'https://ai.dl-dd.com/uploads/static/scene1.png'
+						icon: ''
 					},
 					{
 						id: 2,
 						name: '异议处理',
 						description: '学习如何面对客户提出的各种异议，并有效地进行回应',
-						icon:  'https://ai.dl-dd.com/uploads/static/scene2.png'
+						icon: ''
 					},
 					{
 						id: 3,
 						name: '产品推荐',
 						description: '根据客户需求，推荐最合适的产品，提高销售成功率',
-						icon:  'https://ai.dl-dd.com/uploads/static/scene3.png'
+						icon: ''
 					},
 					{
 						id: 4,
 						name: '成交技巧',
 						description: '学习如何引导客户做出购买决定，顺利完成销售',
-						icon:  'https://ai.dl-dd.com/uploads/static/scene4.png'
+						icon: ''
 					}
 				]
 			}
 		},
 		onLoad() {
+			// 初始化图片路径
+			this.userInfo.avatar = this.apiBaseUrl + '/uploads/static/user-avatar.png';
+			this.scenes[0].icon = this.apiBaseUrl + '/uploads/static/scene1.png';
+			this.scenes[1].icon = this.apiBaseUrl + '/uploads/static/scene2.png';
+			this.scenes[2].icon = this.apiBaseUrl + '/uploads/static/scene3.png';
+			this.scenes[3].icon = this.apiBaseUrl + '/uploads/static/scene4.png';
+			
 			// 加载用户信息和场景数据
 			this.getUserInfo();
 			this.getScenes();
@@ -132,6 +145,12 @@
 				uni.showToast({
 					title: '练习记录功能开发中',
 					icon: 'none'
+				});
+			},
+			goToDigitalHuman() {
+				// 跳转到珍迪助手页面
+				uni.navigateTo({
+					url: '/pages/digital-human/index'
 				});
 			}
 		}

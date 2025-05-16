@@ -41,7 +41,9 @@
 	export default {
 		data() {
 			return {
-                apiBaseUrl: 'https://ai.dl-dd.com/uploads',
+                //apiBaseUrl: 'https://ai.dl-dd.com',
+                apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
+                //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
 				sceneId: 0,
 				scene: {
 					id: 0,
@@ -69,28 +71,28 @@
 						name: '新客户开发',
 						description: '针对首次接触的潜在客户，学习如何有效地介绍产品和建立信任。本场景模拟与一位对产品完全陌生的客户进行初次沟通，你需要通过有效的自我介绍和产品展示，引起客户的兴趣。',
 						goal: '学习如何快速建立与新客户的信任关系，引起客户对产品的兴趣，为后续的深入交流奠定基础。',
-						icon: this.apiBaseUrl+'/static/scene1.png'
+						icon: this.apiBaseUrl+'/uploads/static/scene1.png'
 					},
 					{
 						id: 2,
 						name: '异议处理',
 						description: '学习如何面对客户提出的各种异议，并有效地进行回应。在销售过程中，客户常常会提出各种疑问和异议，本场景将帮助你学习如何处理这些问题，并将潜在的阻碍转化为销售机会。',
 						goal: '掌握处理客户异议的技巧，将异议转化为销售机会，提高客户的购买意愿。',
-						icon: this.apiBaseUrl+'/static/scene2.png'
+						icon: this.apiBaseUrl+'/uploads/static/scene2.png'
 					},
 					{
 						id: 3,
 						name: '产品推荐',
 						description: '根据客户需求，推荐最合适的产品，提高销售成功率。本场景模拟客户已经表明了自己的需求，你需要基于这些需求，向客户推荐最合适的产品。',
 						goal: '学习如何精准分析客户需求，进行有针对性的产品推荐，提高客户满意度和购买几率。',
-						icon: this.apiBaseUrl+'/static/scene3.png'
+						icon: this.apiBaseUrl+'/uploads/static/scene3.png'
 					},
 					{
 						id: 4,
 						name: '成交技巧',
 						description: '学习如何引导客户做出购买决定，顺利完成销售。本场景模拟客户已经对产品有较高兴趣，但尚未做出购买决定的情况，你需要运用成交技巧，促使客户完成购买。',
 						goal: '掌握成交的时机把握和话术技巧，提高成交率，顺利完成销售过程。',
-						icon: this.apiBaseUrl+'/static/scene4.png'
+						icon: this.apiBaseUrl+'/uploads/static/scene4.png'
 					}
 				];
 				

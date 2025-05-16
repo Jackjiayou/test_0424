@@ -3,7 +3,7 @@
           {
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "销售培训小助手"
+				"navigationBarTitleText": "培训"
 			}
 		},
 		{
@@ -23,11 +23,17 @@
 			"style": {
 				"navigationBarTitleText": "练习报告"
 			}
+		},
+		{
+			"path": "pages/digital-human/index",
+			"style": {
+				"navigationBarTitleText": "珍迪助手"
+			}
 		}
 	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "销售培训小助手",
+		"navigationBarTitleText": "培训",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},

@@ -130,8 +130,8 @@
 				// 新增: 机器人消息加载标志
 				isRobotLoading: false,
 				// API地址配置
-				//apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
-                apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
+				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
+                //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
                 //apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
 				showRecordingOverlay: false, // 是否显示录音提示浮层
@@ -288,7 +288,7 @@
 					// 设置机器人消息加载标志为true
 					this.isRobotLoading = true;
 					
-					const realMessages = this.messages.filter(msg => !(msg.from === 'robot' && msg.isLoading));
+					const realMessages = this.messages.filter(msg => !(msg.from === 'assistant' && msg.isLoading));
 					const response = await uni.request({
 						url: this.apiBaseUrl +'/get-robot-message',
 						method: 'GET',
@@ -306,9 +306,9 @@
 					});
 					if (response.statusCode === 200 && response.data) {
 						// 2. 替换第一个 isLoading: true 的机器人消息为真实消息
-						const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+						const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
 						const realMsg = {
-							from: 'robot',
+							from: 'assistant',
 							text: response.data.text,
 							voiceUrl: response.data.voiceUrl,
 							duration: response.data.duration,
@@ -331,7 +331,7 @@
 						});
 					} else {
 						// 获取失败时移除假语音条
-						const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+						const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
 						if (idx !== -1) this.messages.splice(idx, 1);
 						console.error('获取机器人消息失败:', response);
 						uni.showToast({
@@ -343,7 +343,7 @@
 					}
 				} catch (error) {
 					// 获取失败时移除假语音条
-					const idx = this.messages.findIndex(msg => msg.from === 'robot' && msg.isLoading);
+					const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
 					if (idx !== -1) this.messages.splice(idx, 1);
 					console.error('获取机器人消息失败:', error);
 					uni.showToast({
@@ -565,7 +565,7 @@
 							
 							// 立即插入假机器人语音条
 							this.messages.push({
-								from: 'robot',
+								from: 'assistant',
 								text: '机器人正在回复...',
 								voiceUrl: '',
 								duration: '',
@@ -595,7 +595,7 @@
 			},
 			// 获取消息改进建议
 			getMessageSuggestion(text, messageIndex) {
-				const realMessages = this.messages.filter(msg => !(msg.from === 'robot' && msg.isLoading));
+				const realMessages = this.messages.filter(msg => !(msg.from === 'assistant' && msg.isLoading));
 				this.$set(this.messages[messageIndex], 'suggestionLoading', true);
 				this.$set(this.messages[messageIndex], 'suggestionError', false);
 				uni.request({
