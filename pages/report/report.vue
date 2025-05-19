@@ -72,6 +72,7 @@
 
 <script>
 	import uCharts from '@/uni_modules/qiun-data-charts/js_sdk/u-charts/u-charts.js';
+	import config from '@/config.js'
 	
 	export default {
 		data() {
@@ -79,7 +80,7 @@
 				radarSize: 300, // 默认
 				sceneId: 0,
 				sceneName: '',
-				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址
+				apiBaseUrl: config.apiBaseUrl,
 				report: {
 					overall: 85,
 					dimensions: [

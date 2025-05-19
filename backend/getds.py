@@ -41,9 +41,37 @@ def get_messages( history):
 
     return messages
 
+import  json
+def get_messages_ai( history):
+    # 构建系统消息（包含角色定义和规则） 下面是一段顾客（customer）和用户(user)的聊天记录，顾客提问，用户回答，聊天记录中，
+    system_message = {
+        'role': 'system',
+        'content': '''你的角色是顾客（customer），根据下面聊天记录模拟顾客（customer）与用户（user）中文提问聊天 ，自然对话式的问答聊天'''
+    }
+    data1 = json.loads(history)
+    # 构建用户历史消息（聊天记录）
+    messages = [system_message]
+    for history_item in data1:
+        messages.append({'role': 'assistant' if history_item['from']=='customer' else 'user', 'content': history_item['text']})
 
 
-def get_response_new(user_input):
+    return messages
+
+def get_messages_analyze( history):
+    # 构建系统消息（包含角色定义和规则） 下面是一段顾客（customer）和用户(user)的聊天记录，顾客提问，用户回答，聊天记录中，
+    system_message = {
+        'role': 'system',
+        'content': '''你的角色是大健康行业的销售专家，根据下面聊天记录顾客（customer）与用户（user）根据最后一句 用户（user）的话进行分析，生成改进建议,不需要给出分析，直接给出改进建议和示例'''
+    }
+    data1 = json.loads(history)
+    # 构建用户历史消息（聊天记录）
+    messages = [system_message]
+    for history_item in data1:
+        messages.append({'role': 'assistant' if history_item['from']=='customer' else 'user', 'content': history_item['text']})
+
+
+    return messages
+def get_response_qwen(user_input):
 
     retry = 1
     model_name = 'deepseek-reasoner'
@@ -84,10 +112,11 @@ def get_response(user_input):
 
             completion = client.chat.completions.create(
                 model="qwen-plus",  # 模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
-                messages=[
-                    {'role': 'system', 'content': 'You are a helpful assistant.'},
-                    {'role': 'user', 'content': f'{user_input}'}
-                ]
+                messages=user_input
+                # messages=[
+                #     {'role': 'system', 'content': 'You are a helpful assistant.'},
+                #     {'role': 'user', 'content': f'{user_input}'}
+                # ]
             )
 
             content_return = completion.choices[0].message.content

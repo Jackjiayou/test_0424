@@ -38,12 +38,12 @@
 </template>
 
 <script>
+	import config from '@/config.js'
+	
 	export default {
 		data() {
 			return {
-                //apiBaseUrl: 'https://ai.dl-dd.com',
-                apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
-                //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
+                apiBaseUrl: config.apiBaseUrl,
 				sceneId: 0,
 				scene: {
 					id: 0,

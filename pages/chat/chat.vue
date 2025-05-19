@@ -10,8 +10,7 @@
 		<scroll-view class="chat-messages" :scroll-y="true" :scroll-into-view="'msg-' + messages.length" :scroll-with-animation="true" ref="chatScroll">
 			<view v-for="(msg, index) in messages" :key="index" :id="'msg-' + (index + 1)" class="message-item" :class="{ 'robot': msg.from === 'robot', 'user': msg.from === 'user' }">
 				<view class="message-avatar">
-					<!--<image :src="msg.from === 'robot' ? '/static/robot-avatar.png' : '/static/user-avatar.png'"></image> -->
-                    <image :src="msg.from === 'robot' ? 'https://ai.dl-dd.com/uploads/static/robot-avatar.png' : 'https://ai.dl-dd.com/uploads/static/user-avatar.png'"></image>
+					<image :src="msg.from === 'customer' ? `${apiBaseUrl}/uploads/static/robot-avatar.png` : `${apiBaseUrl}/uploads/static/user-avatar.png`"></image>
 				</view>
 				<view class="message-content">  
 					<!-- 语音消息部分 -->
@@ -45,25 +44,22 @@
 							
 							<!-- 改进建议（仅用户消息显示） -->
 							<view v-if="msg.from === 'user'" class="suggestion-wrapper">
-								<view class="suggestion-btn" @click="toggleSuggestion(index)">
+								<view class="suggestion-btn" :class="{'retry-btn': msg.suggestionError}" @click="handleSuggestionClick(msg, index)">
 									<template v-if="msg.suggestionLoading">
 										<text>正在生成改进建议</text>
 										<text class="loading-dot">...</text>
 									</template>
 									<template v-else-if="msg.suggestionError">
-										<text>改进建议生成失败</text>
+										<text>重新生成建议</text>
+										<text class="retry-icon">↻</text>
 									</template>
 									<template v-else>
 										<text>{{msg.showSuggestion ? '收起改进建议' : '查看改进建议'}}</text>
 									</template>
 								</view>
-								<view  class="suggestion-content" v-if="msg.showSuggestion">
+								<view class="suggestion-content" v-if="msg.showSuggestion">
 									<view class="suggestion-title">表达建议</view>
 									<text class="suggestion-text">{{msg.suggestion}}</text>
-									
-									<!-- 润色表达部分 -->
-									<!-- <view class="suggestion-title" style="margin-top: 20rpx;">润色表达</view>
-									<text class="suggestion-text">{{msg.polishedText || '正在生成润色表达...'}}</text>-->
 								</view>
 							</view>
 						</view>
@@ -113,6 +109,8 @@
 </template>
 
 <script>
+	import config from '@/config.js'
+	
 	export default {
 		data() {
 			return {
@@ -130,7 +128,7 @@
 				// 新增: 机器人消息加载标志
 				isRobotLoading: false,
 				// API地址配置
-				apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
+				apiBaseUrl: config.apiBaseUrl, // 修改为您的实际API地址 ai.dl-dd.com
                 //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
                 //apiBaseUrl: 'http://182.92.109.197',
 				// 录音相关
@@ -244,6 +242,19 @@
 				this.getSceneInfo();
 				// 初始化录音管理器
 				this.initRecorder();
+				
+				// 添加初始机器人消息加载效果
+				this.messages.push({
+					from: 'customer',
+					text: '机器人正在回复...',
+					voiceUrl: '',
+					duration: '',
+					isPlaying: false,
+					isLoading: true,
+					timestamp: new Date().toISOString()
+				});
+				this.isRobotLoading = true;  // 设置机器人加载标志
+				
 				// 从后端获取机器人首次问候
 				this.getRobotMessage();
 			}
@@ -288,7 +299,7 @@
 					// 设置机器人消息加载标志为true
 					this.isRobotLoading = true;
 					
-					const realMessages = this.messages.filter(msg => !(msg.from === 'assistant' && msg.isLoading));
+					const realMessages = this.messages.filter(msg => !(msg.from === 'customer' && msg.isLoading));
 					const response = await uni.request({
 						url: this.apiBaseUrl +'/get-robot-message',
 						method: 'GET',
@@ -306,9 +317,9 @@
 					});
 					if (response.statusCode === 200 && response.data) {
 						// 2. 替换第一个 isLoading: true 的机器人消息为真实消息
-						const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
+						const idx = this.messages.findIndex(msg => msg.from === 'customer' && msg.isLoading);
 						const realMsg = {
-							from: 'assistant',
+							from: 'customer',
 							text: response.data.text,
 							voiceUrl: response.data.voiceUrl,
 							duration: response.data.duration,
@@ -331,7 +342,7 @@
 						});
 					} else {
 						// 获取失败时移除假语音条
-						const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
+						const idx = this.messages.findIndex(msg => msg.from === 'customer' && msg.isLoading);
 						if (idx !== -1) this.messages.splice(idx, 1);
 						console.error('获取机器人消息失败:', response);
 						uni.showToast({
@@ -343,7 +354,7 @@
 					}
 				} catch (error) {
 					// 获取失败时移除假语音条
-					const idx = this.messages.findIndex(msg => msg.from === 'assistant' && msg.isLoading);
+					const idx = this.messages.findIndex(msg => msg.from === 'customer' && msg.isLoading);
 					if (idx !== -1) this.messages.splice(idx, 1);
 					console.error('获取机器人消息失败:', error);
 					uni.showToast({
@@ -565,7 +576,7 @@
 							
 							// 立即插入假机器人语音条
 							this.messages.push({
-								from: 'assistant',
+								from: 'customer',
 								text: '机器人正在回复...',
 								voiceUrl: '',
 								duration: '',
@@ -578,15 +589,20 @@
                             this.getMessageSuggestion(data.text, userMessageIndex);
 							
 						} else {
+							// 语音识别失败，移除假语音条
+							this.messages.splice(userMessageIndex, 1);
 							uni.showToast({ title: '语音识别失败', icon: 'none' });
 						}
 					} catch (e) {
+						// 解析失败，移除假语音条
+						this.messages.splice(userMessageIndex, 1);
 						console.error('解析语音识别结果失败:', e);
 						uni.showToast({ title: '语音识别失败', icon: 'none' });
 					}
-					// ... existing code ...
 				},
 				fail: (err) => {
+					// 上传失败，移除假语音条
+					this.messages.splice(userMessageIndex, 1);
 					console.error('上传语音失败:', err);
 					uni.showToast({ title: '上传语音失败', icon: 'none' });
 				},
@@ -595,7 +611,7 @@
 			},
 			// 获取消息改进建议
 			getMessageSuggestion(text, messageIndex) {
-				const realMessages = this.messages.filter(msg => !(msg.from === 'assistant' && msg.isLoading));
+				const realMessages = this.messages.filter(msg => !(msg.from === 'customer' && msg.isLoading));
 				this.$set(this.messages[messageIndex], 'suggestionLoading', true);
 				this.$set(this.messages[messageIndex], 'suggestionError', false);
 				uni.request({
@@ -652,7 +668,7 @@
 			// 格式化消息用于分析
 			formatMessagesForAnalysis() {
 				return this.messages.map(msg => ({
-					role: msg.from === 'user' ? 'user' : 'assistant',
+					role: msg.from === 'user' ? 'user' : 'customer',
 					content: msg.text
 				}));
 			},
@@ -947,6 +963,18 @@
 				width = Math.max(this.minVoiceWidth, Math.min(width, this.maxVoiceWidth));
 				
 				return width + 'rpx';
+			},
+			// 处理建议按钮点击
+			handleSuggestionClick(msg, index) {
+				if (msg.suggestionError) {
+					// 如果是错误状态，重新生成建议
+					this.$set(this.messages[index], 'suggestionLoading', true);
+					this.$set(this.messages[index], 'suggestionError', false);
+					this.getMessageSuggestion(msg.text, index);
+				} else {
+					// 否则切换显示/隐藏
+					this.toggleSuggestion(index);
+				}
 			},
 		}
 	}
@@ -1469,5 +1497,22 @@
 		color: #10b981;
 		border: 2rpx solid #10b981;
 		margin: 0 auto;
+	}
+	
+	.suggestion-btn.retry-btn {
+		background-color: #fff3f0;
+		color: #ff4d4f;
+		border: 1rpx solid #ffccc7;
+	}
+	
+	.retry-icon {
+		margin-left: 8rpx;
+		font-size: 24rpx;
+		animation: rotate 1s linear infinite;
+	}
+	
+	@keyframes rotate {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
 	}
 </style> 

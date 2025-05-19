@@ -33,9 +33,9 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 base_url = "http://localhost:8000"  # 开发环境
-#base_url = "https://ai.dl-dd.com"  # 生产环境
+base_url = "https://ai.dl-dd.com"  # 生产环境
 
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
@@ -443,9 +443,11 @@ async def analyze_message(request: Dict[str, Any]):
     message = request.get("message", "")
     scene_id = request.get("sceneId", 1)
     message_all = request['messages_all']
+    msg = getds.get_messages_analyze(message_all)
+    #prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
+    robot_words = getds.get_response(msg)
 
-    prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
-    robot_words = getds.get_response(prompt_str)
+
 
     # 随机选择一个建议模板
     suggestion = random.choice(suggestion_templates)
@@ -686,8 +688,18 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                     # 根据用户最后一条消息生成回复
                     user_content = last_message["text"].lower()
                     #messages
-                    prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以，你的话仅仅是对话内容"
-                    robot_words = getds.get_response(prompt_str)
+                    #prompt_str = messages+ "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客的角色，通过对我提问和交流，对我不用太客气，锻炼我与客户沟通能力，请你结合历史聊天记录对我提问交流，仅输出下段话就可以，你的话仅仅是对话内容"
+                    #robot_words = getds.get_response(prompt_str)
+
+                    chat_msg = getds.get_messages_ai(messages)
+                    ddd=datetime.now()
+                    robot_words = getds.get_response_qwen(chat_msg)
+                    ddd1 = datetime.now()
+                    robot_words1 = getds.get_response(chat_msg)
+                    ddd2 = datetime.now()
+
+                    print('1:'+str(ddd1-ddd))
+                    print('1:' + str(ddd2 - ddd1))
                     APP_ID = '5f30a0b3'
                     API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
                     API_KEY = 'd4070941076c1e019907487878384f6c'
@@ -838,7 +850,7 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         prompt_str = messages + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是bot，请明确区分你我的对话，不要把你的话当成我说的，你是一名懂健康养生的助手，我是顾客的角色，帮生成自然、对话式的回答,仅生成"
         chat_msg = getds.get_messages(history_messages)
         robot_words = getds.get_response_new(chat_msg)
-
+        #robot_words='你好，我是珍迪助手，请问有什么可以帮您吗'
         base_urlr = base_url + "/uploads/tts/"
         audio_path = ''
         APP_ID = '5f30a0b3'
@@ -858,9 +870,9 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         file_name = os.path.basename(file_name)
         file_path_url = base_urlr + file_name
         local_audio_path = file_path + file_name
-
+        #----------------------
         # 定义一个字符串数组
-        my_list = ["tp1.mp4", "tp2.mp4", "tp3.mp4"]
+        my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
 
         # 随机提取一个元素
         random_item = random.choice(my_list)
@@ -873,7 +885,13 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         print('时间：'+str(bb-aa))
         filename = os.path.basename(video_path_combine)
         url_vedio = base_url+'/uploads/download/'+filename
-        #video_url = r'http://localhost:8000\uploads\download\hr_5s.mp4'#虚拟获取视频的方法后期加上
+        #-----------------------------
+
+        #time.sleep(2)
+        #url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
+
+        #------------------------------
+
         return {"videoUrl": url_vedio,
                 "text": robot_words
                 }

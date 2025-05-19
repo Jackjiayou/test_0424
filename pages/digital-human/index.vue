@@ -13,7 +13,7 @@
 				@error="handleVideoError"
 				@loadstart="handleVideoLoadStart"
 				@loadeddata="handleVideoLoaded"
-				@ended="handleVideoEnded"
+				@ended="handleVideoEnded" 
 			></video>
 		</view>
 		
@@ -65,12 +65,12 @@
 		},
 		onLoad() {
 			// 设置初始视频
-			this.videoUrl = this.apiBaseUrl + '/uploads/download/tp3.mp4';
+			this.videoUrl = this.apiBaseUrl + '/uploads/download/hi1.mp4';
 		},
 		methods: {
 			// 获取随机默认视频
 			getRandomDefaultVideo() {
-				const videos = ['tp1.mp4', 'tp2.mp4', 'tp3.mp4'];
+				const videos = ['tp3.mp4', 'tp3.mp4', 'tp3.mp4'];
 				const randomIndex = Math.floor(Math.random() * videos.length);
 				return this.apiBaseUrl + '/uploads/download/' + videos[randomIndex];
 			},
@@ -80,11 +80,11 @@
 				console.error('视频加载错误:', e);
 				// 如果是默认视频加载失败，尝试加载备用视频
 				if (this.videoUrl.includes('hi.mp4')) {
-					console.log('hi.mp4加载失败，切换到tp1.mp4');
-					this.videoUrl = this.apiBaseUrl + '/uploads/download/tp1.mp4';
+					console.log('hi.mp4加载失败，切换到tp3.mp4');
+					this.videoUrl = this.apiBaseUrl + '/uploads/download/tp3.mp4';
 				}
 				uni.showToast({
-					title: '视频加载失败',
+					title: '视频加载失败',   
 					icon: 'none'
 				});
 			},

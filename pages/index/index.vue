@@ -30,15 +30,15 @@
 		<!-- 功能入口卡片 -->   
 		<view class="card func-card"> 
 			<view class="func-item" @click="goToRanking"> 
-				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/rank.png'"></image>
+				<image class="func-icon" :src="`${apiBaseUrl}/uploads/static/rank.png`"></image>
 				<text class="func-label">排行榜</text>
 			</view>
 			<view class="func-item" @click="goToRecords">
-				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/record.png'"></image>
+				<image class="func-icon" :src="`${apiBaseUrl}/uploads/static/record.png`"></image>
 				<text class="func-label">练习记录</text>
 			</view>
 			<view class="func-item" @click="goToDigitalHuman">
-				<image class="func-icon" :src="apiBaseUrl + '/uploads/static/digital-human.png'"></image>
+				<image class="func-icon" :src="`${apiBaseUrl}/uploads/static/digital-human.png`"></image>
 				<text class="func-label">珍迪助手</text>
 			</view>
 		</view>
@@ -57,11 +57,12 @@
 </template>
 
 <script>
+	import config from '@/config.js'
+	
 	export default {
 		data() {
 			return {
-                apiBaseUrl: 'http://localhost:8000', // 修改为您的实际API地址 ai.dl-dd.com
-                //apiBaseUrl: 'https://ai.dl-dd.com', // 修改为您的实际API地址 ai.dl-dd.com
+                apiBaseUrl: config.apiBaseUrl,
 				userInfo: {
 					avatar: '',
 					name: '张经理',
