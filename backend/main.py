@@ -884,7 +884,8 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         result_msg =[]
         if messages and len(history_messages)>1:
             q_msg = getds.get_messages_rag(messages)
-            if q_msg:
+            if q_msg!='关键词：无' and q_msg:
+                q_msg = q_msg.replace('关键词：','')
                 result_msg = vector_search(query=f"{q_msg}")
         if len(result_msg)>0:
             rag_text = result_msg[0].page_content
@@ -914,23 +915,23 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         local_audio_path = file_path + file_name
         #----------------------
         # 定义一个字符串数组
-        my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
+        # my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
+        #
+        # # 随机提取一个元素
+        # random_item = random.choice(my_list)
 
-        # 随机提取一个元素
-        random_item = random.choice(my_list)
-
-        video_path =f'./uploads/download/{random_item}'
-        aa = datetime.now()
-        video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
-        bb =datetime.now()
-
-        print('时间：'+str(bb-aa))
-        filename = os.path.basename(video_path_combine)
-        url_vedio = base_url+'/uploads/download/'+filename
+        # video_path =f'./uploads/download/{random_item}'
+        # aa = datetime.now()
+        # video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
+        # bb =datetime.now()
+        #
+        # print('时间：'+str(bb-aa))
+        # filename = os.path.basename(video_path_combine)
+        # url_vedio = base_url+'/uploads/download/'+filename
         #-----------------------------
 
-        #time.sleep(2)
-        #url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
+        time.sleep(2)
+        url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
 
         #------------------------------
 

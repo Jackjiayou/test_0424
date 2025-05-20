@@ -272,7 +272,7 @@
 	}
 	
 	.user .message-content {
-		background: #007AFF;
+		background: #1AAD19;
 		color: #fff;
 	}
 	
