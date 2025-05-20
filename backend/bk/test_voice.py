@@ -40,7 +40,7 @@ def extract_fluency_features(audio_path):
     }
 
 # 示例使用
-audio_path = r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\介绍双迪标准.wav"
+audio_path = r"/uploads/voice/介绍双迪标准.wav"
 features = extract_fluency_features(audio_path)
 
 for k, v in features.items():

@@ -1,9 +1,9 @@
 from pydub import AudioSegment
 import os
 # 加载多个音频
-audio1 = AudioSegment.from_wav(r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\介绍双迪标准.wav")
-audio2 = AudioSegment.from_wav(r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\卡曼公司是双迪.wav")
-audio3 = AudioSegment.from_wav(r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\今天天气怎么样标准的.wav")
+audio1 = AudioSegment.from_wav(r"/uploads/voice/介绍双迪标准.wav")
+audio2 = AudioSegment.from_wav(r"/uploads/voice/卡曼公司是双迪.wav")
+audio3 = AudioSegment.from_wav(r"/uploads/voice/今天天气怎么样标准的.wav")
 
 # 合并音频（顺序拼接）
 combined = audio1 + audio2 + audio3
@@ -15,7 +15,7 @@ combined.export(r"E:\work\code\test_uniapp\test_0424\backend\uploads\combined\co
 
 
 # 指定包含 .wav 文件的文件夹路径
-folder_path = "./uploads/combined"  # 修改为你的实际路径
+folder_path = "../uploads/combined"  # 修改为你的实际路径
 
 # 获取所有 .wav 文件（按文件名排序）
 wav_files = sorted([

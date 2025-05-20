@@ -45,10 +45,11 @@
 </template>
 
 <script>
+    import config from '@/config.js'
 	export default {
 		data() {
 			return {
-				apiBaseUrl: 'http://localhost:8000',
+				apiBaseUrl: config.apiBaseUrl,
 				//apiBaseUrl: 'https://ai.dl-dd.com',
 				videoUrl: '', // 默认视频
 				messages: [

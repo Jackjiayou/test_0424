@@ -4,25 +4,22 @@ from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
-import os
 import json
 import random
 from datetime import datetime
 import uuid
-from  text_to_speech import  vtw
 from  personification_text_to_speach import  text_to_speech
 import getds
 from  speech_to_text_fast   import  speech_to_text as st
 import  traceback
-from  speech_to_text import  RequestApi
 import librosa
 from pydub import AudioSegment
 from pydub.utils import which
-import os
 import logging
 import requests
 import time
 import os
+from  search_vectorDB import  vector_search
 
 # 配置日志
 logging.basicConfig(
@@ -33,13 +30,14 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-#logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 base_url = "http://localhost:8000"  # 开发环境
-base_url = "https://ai.dl-dd.com"  # 生产环境
+#base_url = "https://ai.dl-dd.com"  # 生产环境
 
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
 API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
+
 
 # 创建FastAPI应用
 app = FastAPI(title="销售培训API", description="销售培训小程序后端API")
@@ -757,6 +755,7 @@ async def digital_human_speech_to_text(audio_file: UploadFile = File(...), userI
         return result
     except Exception as e:
         logger.error(traceback.format_exc())
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"message": f"语音转文字失败: {str(e)}"})
 
 @app.get("/digital-human-robot-message")
@@ -771,6 +770,7 @@ async def digital_human_robot_message(sceneId: int, messageCount: int, messages:
         return result
     except Exception as e:
         logger.error(traceback.format_exc())
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"message": f"获取机器人回复失败: {str(e)}"})
 
 
@@ -801,6 +801,8 @@ def process_video(video_path, audio_path, api_url="http://117.50.91.160:8000"):
     # 2. 循环检查处理状态
     while True:
         status_response = requests.get(f"{api_url}/status/{task_id}")
+        if status_response.status_code == 502:
+            continue
         status = status_response.json()
         print(f"当前状态: {status['status']}")
 
@@ -828,6 +830,8 @@ def process_video(video_path, audio_path, api_url="http://117.50.91.160:8000"):
 
         time.sleep(5)  # 每5秒检查一次状态
 
+
+
 @app.post("/synthesize")
 async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
     """
@@ -845,11 +849,19 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
                 history_messages = json.loads(messages)
             except:
                 pass
-
+        rag_text = ''
+        q_msg =''
+        result_msg =[]
+        if messages and len(history_messages)>1:
+            q_msg = getds.get_messages_rag(messages)
+            if q_msg:
+                result_msg = vector_search(query=f"{q_msg}")
+        if len(result_msg)>0:
+            rag_text = result_msg[0].page_content
         # 根据历史聊天信息调用大模型生成机器人下一条对话
         prompt_str = messages + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是bot，请明确区分你我的对话，不要把你的话当成我说的，你是一名懂健康养生的助手，我是顾客的角色，帮生成自然、对话式的回答,仅生成"
-        chat_msg = getds.get_messages(history_messages)
-        robot_words = getds.get_response_new(chat_msg)
+        chat_msg = getds.get_messages(history_messages,rag_text)
+        robot_words = getds.get_response_qwen(chat_msg)
         #robot_words='你好，我是珍迪助手，请问有什么可以帮您吗'
         base_urlr = base_url + "/uploads/tts/"
         audio_path = ''
@@ -897,6 +909,7 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
                 }
     except Exception as e:
         logger.error(traceback.format_exc())
+        traceback.print_exc()
         return JSONResponse(status_code=500, content={"message": f"视频合成失败: {str(e)}"})
 
 # 启动应用

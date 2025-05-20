@@ -66,6 +66,13 @@
 				// 从服务器获取场景详情
 				// 这里使用模拟数据
 				const scenes = [
+                    {
+                    	id: 0,
+                    	name: '核苷酸产品介绍',
+                    	description: '你是一位珍奥双迪的保健品销售，正在对保健品持怀疑态度且较为节俭的中老年客户，重点推广核苷酸产品',
+                    	goal: '通过科学依据和产品优势打消客户疑虑，促使选择购买珍奥的核苷酸产品。',
+                    	icon: this.apiBaseUrl+'/uploads/static/scene0.png'
+                    },
 					{
 						id: 1,
 						name: '新客户开发',

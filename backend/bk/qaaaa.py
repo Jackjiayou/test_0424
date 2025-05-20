@@ -28,7 +28,7 @@ audio_file = "./3.mp3"
 #audio_file = "./模糊的.wav"
 # audio_file = "./nls-sample-16k.wav"
 # audio_file = r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\介绍双迪标准.wav"
-audio_file = r"E:\work\code\test_uniapp\test_0424\backend\uploads\voice\卡曼公司是双迪.wav"
+audio_file = r"/uploads/voice/卡曼公司是双迪.wav"
 
 def product_url(api_secret, api_key):
     now_time = datetime.now()
