@@ -133,6 +133,13 @@ class Report(BaseModel):
 # 模拟数据
 scenes = [
     {
+        "id": 0,
+        "name": "核苷酸产品介绍",
+        "description": "你是一位珍奥双迪的保健品销售，正在对保健品持怀疑态度且较为节俭的中老年客户，重点推广核苷酸产品",
+        "goal": "通过科学依据和产品优势打消客户疑虑，促使选择购买珍奥的核苷酸产品。",
+        "icon": "/static/scene1.png"
+    },
+    {
         "id": 1,
         "name": "新客户开发",
         "description": "针对首次接触的潜在客户，学习如何有效地介绍产品和建立信任。本场景模拟与一位对产品完全陌生的客户进行初次沟通，你需要通过有效的自我介绍和产品展示，引起客户的兴趣。",
@@ -164,6 +171,29 @@ scenes = [
 
 # 问题库
 questions = {
+    0: [  # 新客户开发
+        {
+            "id": 1,
+            "sceneId": 0,
+            "text": "我现在很年轻，平常很注重食疗，现在身体状态很不错，我现在真的需要保健吗？",
+            "voiceUrl": "/static/audio/scene1-q1.mp3",
+            "duration": "5"
+        },
+        {
+            "id": 2,
+            "sceneId": 0,
+            "text": "这个产品我吃完以后能有什么效果或者改善呢？",
+            "voiceUrl": "/static/audio/scene1-q2.mp3",
+            "duration": "4"
+        },
+        {
+            "id": 3,
+            "sceneId": 0,
+            "text": "我有很多保健品的选择，为什么要选择你们的核苷酸呢？",
+            "voiceUrl": "/static/audio/scene1-q3.mp3",
+            "duration": "5"
+        }
+    ],
     1: [  # 新客户开发
         {
             "id": 1,
