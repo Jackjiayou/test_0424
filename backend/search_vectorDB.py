@@ -14,17 +14,19 @@ def vector_search(query, filter_query=None, db_path="./db/fund_production_chunk"
     # 使用绝对路径
     current_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(current_dir, db_path)
-    
+    print('vector_search1')
     if not os.path.exists(db_path):
         raise FileNotFoundError(f"Vector database not found at {db_path}")
         
     fund_names_db = FAISS.load_local(db_path,
                                      hf,
                                      allow_dangerous_deserialization=True)
+    print('vector_search2')
     if filter_query:
         result = fund_names_db.similarity_search(query, filter=filter_query, k=k)
     else:
         result = fund_names_db.similarity_search(query, k=k)
+    print('vector_search3')
     return result
 
 

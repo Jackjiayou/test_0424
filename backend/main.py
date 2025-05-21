@@ -31,8 +31,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-base_url = "http://localhost:8000"  # 开发环境
-#base_url = "https://ai.dl-dd.com"  # 生产环境
+#base_url = "http://localhost:8000"  # 开发环境
+base_url = "https://ai.dl-dd.com"  # 生产环境
 
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
@@ -40,7 +40,7 @@ API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
 
 
 # 创建FastAPI应用
-app = FastAPI(title="销售培训API", description="销售培训小程序后端API")
+app = FastAPI(title="销售培训API", description="销售培训小程序后端API",timeout=500)
 
 # 配置CORS
 app.add_middleware(
@@ -831,7 +831,9 @@ def process_video(video_path, audio_path, api_url="http://117.50.91.160:8000"):
     # 2. 循环检查处理状态
     while True:
         status_response = requests.get(f"{api_url}/status/{task_id}")
+        print('get code status:'+str(status_response.status_code))
         if status_response.status_code == 502:
+            print('502')
             continue
         status = status_response.json()
         print(f"当前状态: {status['status']}")
@@ -883,10 +885,14 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         q_msg =''
         result_msg =[]
         if messages and len(history_messages)>1:
+            print('get关键词start')
             q_msg = getds.get_messages_rag(messages)
+            print('get关键词end:'+q_msg)
             if q_msg!='关键词：无' and q_msg:
+                print('查询关键词start:')
                 q_msg = q_msg.replace('关键词：','')
                 result_msg = vector_search(query=f"{q_msg}")
+                print('查询关键词end')
         if len(result_msg)>0:
             rag_text = result_msg[0].page_content
         # 根据历史聊天信息调用大模型生成机器人下一条对话
@@ -915,26 +921,26 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         local_audio_path = file_path + file_name
         #----------------------
         # 定义一个字符串数组
-        # my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
-        #
-        # # 随机提取一个元素
-        # random_item = random.choice(my_list)
+        my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
 
-        # video_path =f'./uploads/download/{random_item}'
-        # aa = datetime.now()
-        # video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
-        # bb =datetime.now()
-        #
-        # print('时间：'+str(bb-aa))
-        # filename = os.path.basename(video_path_combine)
-        # url_vedio = base_url+'/uploads/download/'+filename
+        # 随机提取一个元素
+        random_item = random.choice(my_list)
+
+        video_path =f'./uploads/download/{random_item}'
+        aa = datetime.now()
+        video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
+        bb =datetime.now()
+
+        print('时间：'+str(bb-aa))
+        filename = os.path.basename(video_path_combine)
+        url_vedio = base_url+'/uploads/download/'+filename
         #-----------------------------
 
-        time.sleep(2)
-        url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
+        # time.sleep(2)
+        # url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
 
         #------------------------------
-
+        print('synthesize_video url_vedio：'+url_vedio)
         return {"videoUrl": url_vedio,
                 "text": robot_words
                 }
