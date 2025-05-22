@@ -31,8 +31,8 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-#base_url = "http://localhost:8000"  # 开发环境
-base_url = "https://ai.dl-dd.com"  # 生产环境
+base_url = "http://localhost:8000"  # 开发环境
+#base_url = "https://ai.dl-dd.com"  # 生产环境
 
 APP_ID = "5f30a0b3"
 API_KEY = "d4070941076c1e01997487878384f6c"
@@ -911,7 +911,7 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
             if q_msg!='关键词：无' and q_msg:
                 print('查询关键词start:')
                 q_msg = q_msg.replace('关键词：','')
-                result_msg = vector_search(query=f"{q_msg}")
+                result_msg = vector_search(query=f"{q_msg}",db_path='./db/fund_production_chunk',k=3)
                 if(len(result_msg)>=1):
                     print('result_msg:'+result_msg[0].page_content)
                 print('查询关键词end')
@@ -924,9 +924,6 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         #robot_words='你好，我是珍迪助手，请问有什么可以帮您吗'
         base_urlr = base_url + "/uploads/tts/"
         audio_path = ''
-        APP_ID = '5f30a0b3'
-        API_SECRET = 'MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4'
-        API_KEY = 'd4070941076c1e019907487878384f6c'
 
         file_path = './uploads/tts/'
         file_name = text_to_speech(robot_words, APP_ID, API_SECRET, API_KEY, file_path)
@@ -941,27 +938,33 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         file_name = os.path.basename(file_name)
         file_path_url = base_urlr + file_name
         local_audio_path = file_path + file_name
-        #----------------------
-        # 定义一个字符串数组
-        # my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
-        #
-        # # 随机提取一个元素
-        # random_item = random.choice(my_list)
-        #
-        # video_path =f'./uploads/download/{random_item}'
-        # aa = datetime.now()
-        # video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
-        # bb =datetime.now()
-        #
-        # print('时间：'+str(bb-aa))
-        # filename = os.path.basename(video_path_combine)
-        # url_vedio = base_url+'/uploads/download/'+filename
-        #-----------------------------
-
+        #-------------------------------------------
         time.sleep(2)
         url_vedio = r'http://localhost:8000\uploads\download\output_output_20250521_085117_input.mp4'#虚拟获取视频的方法后期加上
-        robot_words = '有的，我们有深奥纳豆压片糖果，他用的是鹰嘴纳豆营养号吸收，富含纳豆激酶，对血管健康很有帮助'
-        #------------------------------
+        #robot_words = '有的，我们有珍奥纳豆压片糖果，他用的是鹰嘴纳豆营养号吸收，富含纳豆激酶，对血管健康很有帮助'
+        print('synthesize_video url_vedio：'+url_vedio)
+        return {"videoUrl": url_vedio,
+                "text": robot_words
+                }
+
+        #----------------------
+        # 定义一个字符串数组
+        my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
+
+        # 随机提取一个元素
+        random_item = random.choice(my_list)
+
+        video_path =f'./uploads/download/{random_item}'
+        aa = datetime.now()
+        video_path_combine = process_video(video_path, local_audio_path, api_url="http://106.75.44.55:8000")
+        bb =datetime.now()
+
+        print('时间：'+str(bb-aa))
+        filename = os.path.basename(video_path_combine)
+        url_vedio = base_url+'/uploads/download/'+filename
+        #-----------------------------
+
+
         print('synthesize_video url_vedio：'+url_vedio)
         return {"videoUrl": url_vedio,
                 "text": robot_words

@@ -201,6 +201,11 @@ def on_open(ws):
 def text_to_speech(text,appid,apisecret,apikey,save_folder):
     # 从控制台页面获取以下密钥信息，控制台地址：https://console.xfyun.cn/app/myapp
     try:
+
+        appid = '945b4712'
+        apisecret = 'ZWI2YzcyODhiZTQwNzQ4YjkxNjQzZTgx'
+        apikey = 'ea534a9e6e9cd16ca30764ccf18901e9'
+
         root_folder = save_folder
         now = datetime.now()
         timestamp = int(now.timestamp())
