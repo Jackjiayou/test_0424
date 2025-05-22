@@ -55,7 +55,7 @@
 				messages: [
 					{
 						type: 'assistant',
-						content: '你好，我是珍迪助手，可以问我健康养生相关问题。'
+						content: '你好，我是珍迪助手，请问有什么可以帮您吗'
 					}
 				], // 聊天记录
 				inputMessage: '', // 输入框内容

@@ -471,10 +471,30 @@ async def analyze_message(request: Dict[str, Any]):
     message = request.get("message", "")
     scene_id = request.get("sceneId", 1)
     message_all = request['messages_all']
-    msg = getds.get_messages_analyze(message_all)
-    #prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
-    robot_words = getds.get_response(msg)
+    sence_curr = scenes[scene_id]['description']
 
+    last_customer_text = None
+    his_data = json.loads(message_all)
+    for entry in reversed(his_data):
+        if entry.get("from") == "customer":
+            last_customer_text = entry.get("text")
+            break
+
+    if scene_id==0 :
+         db_path ='./db/fund_nucleotide_chunk'
+
+    result_msg = vector_search(query=f"{last_customer_text}",db_path='./db/fund_nucleotide_chunk',k=3)
+    q_msg = ''
+
+    if len(result_msg) > 0:
+        rag_text = result_msg[0].page_content
+        for it in result_msg:
+            q_msg = q_msg + "---------------------------------\n" + it.page_content
+        #print('rag_text:'+rag_text)
+    msg = getds.get_messages_analyze(message_all,q_msg,sence_curr)
+    #prompt_str = message_all + "上面是我们的聊天记录，聊天记录中我的标签是user，你的标签是assistant，请明确区分你我的对话，不要把你的话当成我说的，我是一名大健康行业直销员，你是顾客，请对我的最后一句话的回答，生成改进建议,不需要给出分析，直接给出改进建议和示例"
+    robot_words = getds.get_response_qwen(msg)
+    #robot_words1 = getds.get_response(msg)
 
 
     # 随机选择一个建议模板
@@ -723,7 +743,7 @@ async def get_robot_message(sceneId: int, messageCount: int, messages: Optional[
                     ddd=datetime.now()
                     robot_words = getds.get_response_qwen(chat_msg)
                     ddd1 = datetime.now()
-                    robot_words1 = getds.get_response(chat_msg)
+                    #robot_words1 = getds.get_response(chat_msg)
                     ddd2 = datetime.now()
 
                     print('1:'+str(ddd1-ddd))
@@ -892,6 +912,8 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
                 print('查询关键词start:')
                 q_msg = q_msg.replace('关键词：','')
                 result_msg = vector_search(query=f"{q_msg}")
+                if(len(result_msg)>=1):
+                    print('result_msg:'+result_msg[0].page_content)
                 print('查询关键词end')
         if len(result_msg)>0:
             rag_text = result_msg[0].page_content
@@ -921,24 +943,24 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         local_audio_path = file_path + file_name
         #----------------------
         # 定义一个字符串数组
-        my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
-
-        # 随机提取一个元素
-        random_item = random.choice(my_list)
-
-        video_path =f'./uploads/download/{random_item}'
-        aa = datetime.now()
-        video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
-        bb =datetime.now()
-
-        print('时间：'+str(bb-aa))
-        filename = os.path.basename(video_path_combine)
-        url_vedio = base_url+'/uploads/download/'+filename
+        # my_list = ["tp4.mp4", "tp2.mp4", "tp3.mp4"]
+        #
+        # # 随机提取一个元素
+        # random_item = random.choice(my_list)
+        #
+        # video_path =f'./uploads/download/{random_item}'
+        # aa = datetime.now()
+        # video_path_combine = process_video(video_path, local_audio_path, api_url="http://117.50.91.160:8000")
+        # bb =datetime.now()
+        #
+        # print('时间：'+str(bb-aa))
+        # filename = os.path.basename(video_path_combine)
+        # url_vedio = base_url+'/uploads/download/'+filename
         #-----------------------------
 
-        # time.sleep(2)
-        # url_vedio = r'http://localhost:8000\uploads\download\output_output_20250516_184534_input.mp4'#虚拟获取视频的方法后期加上
-
+        time.sleep(2)
+        url_vedio = r'http://localhost:8000\uploads\download\output_output_20250521_085117_input.mp4'#虚拟获取视频的方法后期加上
+        robot_words = '有的，我们有深奥纳豆压片糖果，他用的是鹰嘴纳豆营养号吸收，富含纳豆激酶，对血管健康很有帮助'
         #------------------------------
         print('synthesize_video url_vedio：'+url_vedio)
         return {"videoUrl": url_vedio,
