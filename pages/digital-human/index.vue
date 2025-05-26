@@ -13,7 +13,8 @@
 				@error="handleVideoError"
 				@loadstart="handleVideoLoadStart"
 				@loadeddata="handleVideoLoaded"
-				@ended="handleVideoEnded" 
+				@ended="handleVideoEnded"
+				@play="handleVideoPlay"
 			></video>
 		</view>
 		
@@ -62,6 +63,7 @@
 				scrollTop: 0, // 滚动位置
 				isVideoLoading: false, // 视频加载状态
 				pendingVideoUrl: '', // 待播放的新视频URL
+				pendingBotMessage: '', // 待显示的机器人消息
 			}
 		},
 		onLoad() {
@@ -98,6 +100,22 @@
 			// 视频加载完成
 			handleVideoLoaded() {
 				this.isVideoLoading = false;
+			},
+			
+			// 处理视频开始播放
+			handleVideoPlay() {
+				console.log('视频开始播放');
+				// 如果有待显示的机器人消息，则延迟1秒显示
+				if (this.pendingBotMessage) {
+					setTimeout(() => {
+						this.messages.push({
+							type: 'assistant',
+							content: this.pendingBotMessage
+						});
+						this.pendingBotMessage = ''; // 清空待显示消息
+						this.scrollToBottom(); // 滚动到底部
+					}, 1000); // 延迟1秒
+				}
 			},
 			
 			// 处理视频播放结束
@@ -163,6 +181,8 @@
 							
 							if (checkRes.statusCode === 200) {
 								this.pendingVideoUrl = newVideoUrl;
+								// 保存机器人回复文字，等待视频播放时显示
+								this.pendingBotMessage = res.data.text || '已为您生成视频回复';
 							} else {
 								throw new Error('视频文件不可访问');
 							}
@@ -176,16 +196,6 @@
 							this.pendingVideoUrl = this.getRandomDefaultVideo();
 							return;
 						}
-						
-						// 添加机器人回复
-						// 延迟两秒添加机器人回复
-						setTimeout(() => {
-							this.messages.push({
-								type: 'assistant',
-								content: res.data.text || '已为您生成视频回复'
-							});
-							this.scrollToBottom(); // 回复后滚动到底部
-						}, 5000);
 					} else {
 						// 如果没有返回视频URL，使用随机默认视频
 						console.log('没有返回视频URL，使用随机默认视频');
