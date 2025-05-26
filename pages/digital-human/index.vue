@@ -178,10 +178,14 @@
 						}
 						
 						// 添加机器人回复
-						this.messages.push({
-							type: 'assistant',
-							content: res.data.text || '已为您生成视频回复'
-						});
+						// 延迟两秒添加机器人回复
+						setTimeout(() => {
+							this.messages.push({
+								type: 'assistant',
+								content: res.data.text || '已为您生成视频回复'
+							});
+							this.scrollToBottom(); // 回复后滚动到底部
+						}, 5000);
 					} else {
 						// 如果没有返回视频URL，使用随机默认视频
 						console.log('没有返回视频URL，使用随机默认视频');

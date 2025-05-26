@@ -40,7 +40,7 @@ API_SECRET = "MGYyMzJlYmYzZWVmMjIxZWE4ZThhNzA4"
 
 
 # 创建FastAPI应用
-app = FastAPI(title="销售培训API", description="销售培训小程序后端API",timeout=500)
+app = FastAPI(title="销售培训API", description  ="销售培训小程序后端API",timeout=500)
 
 # 配置CORS
 app.add_middleware(
@@ -939,13 +939,13 @@ async def synthesize_video(text: str = Form(...), messages: str = Form(None)):
         file_path_url = base_urlr + file_name
         local_audio_path = file_path + file_name
         #-------------------------------------------
-        time.sleep(2)
-        url_vedio = r'http://localhost:8000\uploads\download\output_output_20250521_085117_input.mp4'#虚拟获取视频的方法后期加上
-        #robot_words = '有的，我们有珍奥纳豆压片糖果，他用的是鹰嘴纳豆营养号吸收，富含纳豆激酶，对血管健康很有帮助'
-        print('synthesize_video url_vedio：'+url_vedio)
-        return {"videoUrl": url_vedio,
-                "text": robot_words
-                }
+        # time.sleep(2)
+        # url_vedio = r'http://localhost:8000\uploads\download\output_output_20250521_085117_input.mp4'#虚拟获取视频的方法后期加上
+        # robot_words = '有的，我们有珍奥纳豆压片糖果，他用的是鹰嘴纳豆营养号吸收，富含纳豆激酶，对血管健康很有帮助'
+        # print('synthesize_video url_vedio：'+url_vedio)
+        # return {"videoUrl": url_vedio,
+        #         "text": robot_words
+        #         }
 
         #----------------------
         # 定义一个字符串数组
